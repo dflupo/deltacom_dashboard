@@ -35,44 +35,24 @@
             <button id="apply-filters" class="btn-primary">Applica Filtri</button>
         </div>
 
-        <!-- Statistiche -->
-        <div class="stats">
-            <div class="stat-card">
-                <h3>Valore Minimo</h3>
-                <p id="min-value">-</p>
+        <!-- Grafici -->
+        <div id="charts-section">
+            <div class="chart-box">
+                <h3>Battiti per Minuto (BPM)</h3>
+                <canvas id="bpm-chart"></canvas>
+                <div class="chart-legend" id="legend-bpm"></div>
             </div>
-            <div class="stat-card">
-                <h3>Valore Massimo</h3>
-                <p id="max-value">-</p>
+            <div class="chart-box">
+                <h3>Distanza (metri)</h3>
+                <canvas id="distance-chart"></canvas>
+                <div class="chart-legend" id="legend-distance"></div>
             </div>
-            <div class="stat-card">
-                <h3>Media</h3>
-                <p id="avg-value">-</p>
-            </div>
-            <div class="stat-card">
-                <h3>Durata</h3>
-                <p id="duration">-</p>
-            </div>
-        </div>
-
-        <!-- Grafico principale -->
-        <div class="chart-container">
-            <canvas id="main-chart"></canvas>
-        </div>
-
-        <!-- Grafico confronto operatori -->
-        <div class="comparison-section">
-            <h2>Confronto Multi-Operatore</h2>
-            <div class="operator-checkboxes" id="operator-checkboxes">
-                <!-- Checkbox operatori verranno generati dinamicamente -->
-            </div>
-            <div class="chart-container">
-                <canvas id="comparison-chart"></canvas>
+            <div class="chart-box">
+                <h3>Velocità (m/s)</h3>
+                <canvas id="speed-chart"></canvas>
+                <div class="chart-legend" id="legend-speed"></div>
             </div>
         </div>
-
-        <!-- Sezione grafici multi-operatore -->
-        <div id="charts-section"></div>
     </div>
 
     <!-- Scripts -->

@@ -60,24 +60,36 @@ class Dashboard {
         window.filterManager.setTimeRanges(allData);
     }
 
-    // Aggiorna i grafici (mostra sempre tutti)
+    // Aggiorna i grafici (solo 3, uno per metrica)
     updateMainChart() {
-        const data = window.filterManager.getFilteredData();
-        window.chartManager.renderAllCharts(data);
+        let data = window.filterManager.getFilteredData();
+        let selectedOperators = [];
+        if (window.filterManager.currentOperator === 'all') {
+            data = data || {};
+            selectedOperators = Object.keys(data);
+        } else {
+            const op = window.filterManager.currentOperator;
+            data = { [op]: data };
+            selectedOperators = [op];
+        }
+        window.chartManager.renderAllCharts(data, selectedOperators);
     }
 
-    // Aggiorna le statistiche
+    // Aggiorna le statistiche (solo se un operatore selezionato)
     updateStats() {
-        const data = window.filterManager.getFilteredData();
-        
-        if (!data || data.length === 0) {
+        let data = window.filterManager.getFilteredData();
+        if (window.filterManager.currentOperator === 'all' || !data) {
             this.updateStatElements('-', '-', '-', '-');
             return;
         }
-
-        const stats = window.dataLoader.calculateStats(data);
-        const duration = window.dataLoader.calculateDuration(data);
-        
+        // Prendi solo la metrica BPM per le statistiche
+        const bpmData = data['bpm'] || [];
+        if (!bpmData.length) {
+            this.updateStatElements('-', '-', '-', '-');
+            return;
+        }
+        const stats = window.dataLoader.calculateStats(bpmData);
+        const duration = window.dataLoader.calculateDuration(bpmData);
         this.updateStatElements(
             stats.min.toFixed(2),
             stats.max.toFixed(2),

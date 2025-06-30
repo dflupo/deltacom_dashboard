@@ -23,97 +23,100 @@ class ChartManager {
         });
     }
 
-    // Crea tutti i blocchi operatore con i 3 grafici
-    renderOperatorCharts(operatorsData, selectedOperators) {
+    renderAllCharts(operatorsData, selectedOperators) {
         const metrics = [
-            { key: 'bpm', label: 'Battiti per Minuto (BPM)', unit: 'BPM' },
-            { key: 'distance', label: 'Distanza (metri)', unit: 'Metri' },
-            { key: 'speed', label: 'Velocità (m/s)', unit: 'm/s' }
+            { key: 'bpm', label: 'Battiti per Minuto (BPM)', unit: 'BPM', chartId: 'bpm-chart', legendId: 'legend-bpm' },
+            { key: 'distance', label: 'Distanza (metri)', unit: 'Metri', chartId: 'distance-chart', legendId: 'legend-distance' },
+            { key: 'speed', label: 'Velocità (m/s)', unit: 'm/s', chartId: 'speed-chart', legendId: 'legend-speed' }
         ];
-        const container = document.getElementById('charts-section');
-        container.innerHTML = '';
-        this.charts = {};
-
         this.assignColors(selectedOperators);
 
-        selectedOperators.forEach(op => {
-            const opData = operatorsData[op];
-            const color = this.operatorColors[op];
-            // Blocco operatore
-            const opBox = document.createElement('div');
-            opBox.className = 'operator-block';
-            opBox.innerHTML = `<h2 style="color:${color};margin-bottom:8px;">${op.charAt(0).toUpperCase() + op.slice(1)}</h2>`;
-            metrics.forEach(metric => {
-                // Crea canvas
-                const chartId = `${op}-${metric.key}-chart`;
-                const chartBox = document.createElement('div');
-                chartBox.className = 'chart-box';
-                chartBox.innerHTML = `
-                    <h3>${metric.label}</h3>
-                    <canvas id="${chartId}"></canvas>
-                    <div class="chart-legend" id="legend-${chartId}"></div>
-                `;
-                opBox.appendChild(chartBox);
-                // Prepara dati
-                let data = opData && opData[metric.key] ? opData[metric.key] : [];
-                // Ordina per timestamp
-                data = data.slice().sort((a, b) => a.unixTimestamp - b.unixTimestamp);
-                const labels = data.map(item => item.timestamp);
-                const values = data.map(item => item.value);
-                // Crea/distruggi grafico
-                if (this.charts[chartId]) {
-                    this.charts[chartId].destroy();
-                }
-                this.charts[chartId] = new Chart(document.getElementById(chartId), {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: op.charAt(0).toUpperCase() + op.slice(1),
-                            data: values,
-                            borderColor: color,
-                            backgroundColor: color + '20',
-                            borderWidth: 2,
-                            fill: false,
-                            tension: 0.4,
-                            pointRadius: 2,
-                            pointHoverRadius: 5
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            title: { display: false },
-                            legend: { display: false },
-                            tooltip: { mode: 'index', intersect: false }
-                        },
-                        scales: {
-                            x: {
-                                display: true,
-                                title: { display: true, text: 'Tempo' },
-                                ticks: { maxTicksLimit: 10, maxRotation: 45 }
-                            },
-                            y: {
-                                display: true,
-                                title: { display: true, text: metric.unit },
-                                beginAtZero: false
-                            }
-                        },
-                        interaction: { mode: 'nearest', axis: 'x', intersect: false }
-                    }
-                });
-                // Legenda
-                const legendDiv = document.getElementById(`legend-${chartId}`);
-                if (legendDiv) {
-                    legendDiv.innerHTML = `<span style="display:inline-block;width:16px;height:4px;background:${color};margin-right:6px;vertical-align:middle;"></span><span style="vertical-align:middle;">${op.charAt(0).toUpperCase() + op.slice(1)}</span>`;
-                }
-                // Se nessun dato, mostra errore visivo
-                if (!values.length) {
-                    chartBox.insertAdjacentHTML('beforeend', '<div class="chart-error">Nessun dato disponibile per questa metrica</div>');
+        metrics.forEach(metric => {
+            // Unione di tutti i timestamp disponibili per questa metrica
+            let allTimestamps = new Set();
+            selectedOperators.forEach(op => {
+                if (operatorsData[op] && operatorsData[op][metric.key]) {
+                    operatorsData[op][metric.key].forEach(item => {
+                        allTimestamps.add(item.timestamp);
+                    });
                 }
             });
-            container.appendChild(opBox);
+            allTimestamps = Array.from(allTimestamps).sort();
+
+            // Costruisci datasets per ogni operatore
+            const datasets = selectedOperators.map(op => {
+                const opData = operatorsData[op] && operatorsData[op][metric.key] ? operatorsData[op][metric.key] : [];
+                // Mappa timestamp -> valore
+                const valueMap = {};
+                opData.forEach(item => {
+                    valueMap[item.timestamp] = item.value;
+                });
+                // Allinea i dati su tutti i timestamp
+                const data = allTimestamps.map(ts => valueMap[ts] !== undefined ? valueMap[ts] : null);
+                return {
+                    label: op.charAt(0).toUpperCase() + op.slice(1),
+                    data,
+                    borderColor: this.operatorColors[op],
+                    backgroundColor: this.operatorColors[op] + '20',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4,
+                    pointRadius: 2,
+                    pointHoverRadius: 5
+                };
+            });
+
+            // Crea/distruggi grafico
+            const canvas = document.getElementById(metric.chartId);
+            if (!canvas) return;
+            if (this.charts[metric.key]) {
+                this.charts[metric.key].destroy();
+            }
+            this.charts[metric.key] = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: allTimestamps,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: false },
+                        legend: { display: false },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: { display: true, text: 'Tempo' },
+                            ticks: { maxTicksLimit: 10, maxRotation: 45 }
+                        },
+                        y: {
+                            display: true,
+                            title: { display: true, text: metric.unit },
+                            beginAtZero: false
+                        }
+                    },
+                    interaction: { mode: 'nearest', axis: 'x', intersect: false }
+                }
+            });
+
+            // Legenda custom sotto il grafico
+            const legendDiv = document.getElementById(metric.legendId);
+            if (legendDiv) {
+                legendDiv.innerHTML = selectedOperators.map(op => `
+                    <span style="display:inline-block;margin-right:16px;">
+                        <span style="display:inline-block;width:16px;height:4px;background:${this.operatorColors[op]};margin-right:6px;vertical-align:middle;"></span>
+                        <span style="vertical-align:middle;">${op.charAt(0).toUpperCase() + op.slice(1)}</span>
+                    </span>
+                `).join('');
+            }
+
+            // Se nessun dato, mostra errore visivo
+            if (datasets.every(ds => ds.data.every(v => v === null))) {
+                canvas.parentElement.insertAdjacentHTML('beforeend', '<div class="chart-error">Nessun dato disponibile per questa metrica</div>');
+            }
         });
     }
 }
