@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Missione Militare</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>📊 Dashboard Missione Militare</h1>
+            <p>Analisi dati operatori in tempo reale</p>
+        </header>
+
+        <!-- Filtri -->
+        <div class="filters">
+            <div class="filter-group">
+                <label for="operator-select">Operatore:</label>
+                <select id="operator-select">
+                    <option value="">Caricamento operatori...</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="time-range">Intervallo Temporale:</label>
+                <div class="time-inputs">
+                    <input type="datetime-local" id="start-time" placeholder="Inizio">
+                    <input type="datetime-local" id="end-time" placeholder="Fine">
+                </div>
+            </div>
+            
+            <button id="apply-filters" class="btn-primary">Applica Filtri</button>
+        </div>
+
+        <!-- Statistiche -->
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Valore Minimo</h3>
+                <p id="min-value">-</p>
+            </div>
+            <div class="stat-card">
+                <h3>Valore Massimo</h3>
+                <p id="max-value">-</p>
+            </div>
+            <div class="stat-card">
+                <h3>Media</h3>
+                <p id="avg-value">-</p>
+            </div>
+            <div class="stat-card">
+                <h3>Durata</h3>
+                <p id="duration">-</p>
+            </div>
+        </div>
+
+        <!-- Grafico principale -->
+        <div class="chart-container">
+            <canvas id="main-chart"></canvas>
+        </div>
+
+        <!-- Grafico confronto operatori -->
+        <div class="comparison-section">
+            <h2>Confronto Multi-Operatore</h2>
+            <div class="operator-checkboxes" id="operator-checkboxes">
+                <!-- Checkbox operatori verranno generati dinamicamente -->
+            </div>
+            <div class="chart-container">
+                <canvas id="comparison-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Sezione grafici multi-operatore -->
+        <div id="charts-section"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/data-loader.js"></script>
+    <script src="js/chart-manager.js"></script>
+    <script src="js/filters.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html> 

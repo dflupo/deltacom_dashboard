@@ -1,0 +1,174 @@
+class DataLoader {
+    constructor() {
+        this.operators = {};
+        this.availableOperators = [];
+        this.apiBase = window.location.origin.includes('localhost') ? 'http://localhost:3001' : '';
+    }
+
+    // Converte timestamp Unix in data leggibile
+    convertTimestamp(unixTimestamp) {
+        const date = new Date(parseInt(unixTimestamp) * 1000);
+        return date.toISOString().replace('T', ' ').substring(0, 19);
+    }
+
+    // Carica un singolo file JSON
+    async loadJsonFile(path) {
+        try {
+            const response = await fetch(path);
+            if (!response.ok) {
+                if (response.status === 404) {
+                    // File non trovato: logga solo come info, non come errore
+                    console.info(`File opzionale non trovato: ${path}`);
+                    return null;
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error(`Errore nel caricamento di ${path}:`, error);
+            return null;
+        }
+    }
+
+    // Unisce dati con numerazione (es. bpm.json + bpm2.json)
+    mergeNumberedData(dataArray) {
+        const merged = {};
+        
+        dataArray.forEach(data => {
+            if (data && data.value) {
+                Object.assign(merged, data.value);
+            }
+        });
+        
+        return merged;
+    }
+
+    // Normalizza i dati di un operatore
+    normalizeOperatorData(operatorName) {
+        const operator = this.operators[operatorName];
+        const normalized = {};
+
+        // Per ogni tipo di dato (bpm, distance, speed)
+        ['bpm', 'distance', 'speed'].forEach(dataType => {
+            if (operator[dataType]) {
+                const dataArray = Array.isArray(operator[dataType]) ? operator[dataType] : [operator[dataType]];
+                const mergedData = this.mergeNumberedData(dataArray);
+                
+                // Converti in array di oggetti con timestamp normalizzato
+                normalized[dataType] = Object.entries(mergedData)
+                    .map(([timestamp, value]) => ({
+                        timestamp: this.convertTimestamp(timestamp),
+                        value: parseFloat(value),
+                        unixTimestamp: parseInt(timestamp)
+                    }))
+                    .sort((a, b) => a.unixTimestamp - b.unixTimestamp);
+            }
+        });
+
+        return normalized;
+    }
+
+    // Scansiona la cartella data per trovare tutti gli operatori tramite API
+    async scanOperators() {
+        try {
+            const res = await fetch(`${this.apiBase}/api/operators`);
+            const data = await res.json();
+            const operatorNames = data.operators || [];
+            for (const operatorName of operatorNames) {
+                await this.loadOperatorData(operatorName);
+            }
+            this.availableOperators = operatorNames;
+            return this.availableOperators;
+        } catch (error) {
+            console.error('Errore nella scansione operatori:', error);
+            return [];
+        }
+    }
+
+    // Carica i dati di un singolo operatore
+    async loadOperatorData(operatorName) {
+        const dataTypes = ['bpm', 'distance', 'speed'];
+        const operatorData = {};
+
+        for (const dataType of dataTypes) {
+            const dataFiles = [];
+            let fileIndex = 1;
+            let hasMoreFiles = true;
+            while (hasMoreFiles) {
+                const fileName = fileIndex === 1 ? `${dataType}.json` : `${dataType}${fileIndex}.json`;
+                const filePath = `${this.apiBase}/data/${operatorName}/${fileName}`;
+                const data = await this.loadJsonFile(filePath);
+                if (data) {
+                    dataFiles.push(data);
+                    fileIndex++;
+                } else {
+                    hasMoreFiles = false;
+                }
+            }
+            if (dataFiles.length > 0) {
+                operatorData[dataType] = dataFiles;
+            }
+        }
+        this.operators[operatorName] = operatorData;
+    }
+
+    // Ottiene i dati normalizzati di un operatore
+    getOperatorData(operatorName) {
+        if (!this.operators[operatorName]) {
+            return null;
+        }
+        return this.normalizeOperatorData(operatorName);
+    }
+
+    // Ottiene tutti i dati normalizzati
+    getAllData() {
+        const allData = {};
+        for (const operatorName of this.availableOperators) {
+            allData[operatorName] = this.getOperatorData(operatorName);
+        }
+        return allData;
+    }
+
+    // Filtra i dati per intervallo temporale
+    filterDataByTimeRange(data, startTime, endTime) {
+        if (!data) return [];
+        return data.filter(item => {
+            const itemTime = new Date(item.timestamp);
+            const start = startTime ? new Date(startTime) : new Date(0);
+            const end = endTime ? new Date(endTime) : new Date();
+            return itemTime >= start && itemTime <= end;
+        });
+    }
+
+    // Calcola statistiche sui dati
+    calculateStats(data) {
+        if (!data || data.length === 0) {
+            return { min: 0, max: 0, avg: 0, count: 0 };
+        }
+        const values = data.map(item => item.value);
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
+        const count = values.length;
+        return { min, max, avg, count };
+    }
+
+    // Calcola la durata totale
+    calculateDuration(data) {
+        if (!data || data.length < 2) return '0 min';
+        const firstTime = new Date(data[0].timestamp);
+        const lastTime = new Date(data[data.length - 1].timestamp);
+        const durationMs = lastTime - firstTime;
+        const durationMinutes = Math.round(durationMs / (1000 * 60));
+        if (durationMinutes < 60) {
+            return `${durationMinutes} min`;
+        } else {
+            const hours = Math.floor(durationMinutes / 60);
+            const minutes = durationMinutes % 60;
+            return `${hours}h ${minutes}min`;
+        }
+    }
+}
+
+// Istanza globale del data loader
+window.dataLoader = new DataLoader(); 
