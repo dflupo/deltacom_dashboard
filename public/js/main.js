@@ -12,18 +12,11 @@ class Dashboard {
             // Mostra loading
             this.showLoading();
             
-            // Carica i dati
-            await this.loadData();
-            
-            // Popola i filtri
-            this.populateFilters();
+            // Inizializza il day selector
+            await this.initDaySelector();
             
             // Nasconde loading
             this.hideLoading();
-            
-            // Aggiorna la visualizzazione iniziale
-            this.updateMainChart();
-            this.updateStats();
             
             this.isInitialized = true;
             console.log('✅ Dashboard inizializzata con successo!');
@@ -34,19 +27,54 @@ class Dashboard {
         }
     }
 
-    // Carica tutti i dati
-    async loadData() {
-        console.log('📊 Caricamento dati...');
+    // Inizializza il day selector
+    async initDaySelector() {
+        console.log('📅 Inizializzazione day selector...');
         
-        // Scansiona gli operatori disponibili
-        const operators = await window.dataLoader.scanOperators();
-        console.log('Operatori trovati:', operators);
+        // Inizializza il day selector con callback per i cambiamenti
+        await window.daySelector.init('day-selector-container', (selectedDays) => {
+            this.onDayChanged(selectedDays[0]);
+        });
         
-        if (operators.length === 0) {
-            throw new Error('Nessun operatore trovato');
+        // Se ci sono giorni disponibili, seleziona il primo di default
+        const availableDays = window.daySelector.availableDays;
+        if (availableDays.length > 0) {
+            window.daySelector.setSelectedDay(availableDays[0]);
         }
-        // Aggiorna la UI dei toggle operatori
-        window.filterManager.renderOperatorToggles();
+    }
+
+    // Gestisce il cambiamento del giorno selezionato
+    async onDayChanged(selectedDay) {
+        console.log('📅 Giorno selezionato cambiato:', selectedDay);
+        
+        try {
+            // Mostra loading
+            this.showLoading();
+            
+            // Aggiorna la UI dei toggle operatori
+            window.filterManager.renderOperatorToggles();
+            
+            // Popola i filtri con i nuovi dati
+            this.populateFilters();
+            
+            // Aggiorna la visualizzazione
+            this.updateMainChart();
+            this.updateStats();
+            
+            // Nasconde loading
+            this.hideLoading();
+            
+        } catch (error) {
+            console.error('❌ Errore durante l\'aggiornamento:', error);
+            this.hideLoading();
+            this.showError('Errore durante l\'aggiornamento dei dati');
+        }
+    }
+
+    // Carica tutti i dati (non più necessario, gestito dal day selector)
+    async loadData() {
+        // Non serve più caricare dati qui, viene gestito dal day selector
+        console.log('📊 Caricamento dati gestito dal day selector');
     }
 
     // Inizializza i grafici (ora non serve più)
@@ -70,9 +98,23 @@ class Dashboard {
             return;
         }
         const allData = window.dataLoader.getAllData();
-        // Applico il filtro temporale hardcoded a tutti gli operatori attivi
-        const start = '2025-06-30T00:00';
-        const end = '2025-06-30T23:59';
+
+        // Filtro temporale dinamico in base al giorno selezionato
+        let start, end;
+        const selectedDay = window.daySelector.getSelectedDay();
+        if (selectedDay && /^\d{8}$/.test(selectedDay)) {
+            // Se il giorno è in formato YYYYMMDD
+            const year = selectedDay.substring(0, 4);
+            const month = selectedDay.substring(4, 6);
+            const day = selectedDay.substring(6, 8);
+            start = `${year}-${month}-${day}T00:00`;
+            end = `${year}-${month}-${day}T23:59`;
+        } else {
+            // Default: nessun filtro
+            start = null;
+            end = null;
+        }
+
         const filteredData = {};
         selectedOperators.forEach(op => {
             if (allData[op]) {
@@ -80,6 +122,7 @@ class Dashboard {
                 Object.keys(allData[op]).forEach(metric => {
                     if (Array.isArray(allData[op][metric])) {
                         let filtered = allData[op][metric].filter(item => {
+                            if (!start || !end) return true;
                             const t = new Date(item.timestamp);
                             return t >= new Date(start) && t <= new Date(end);
                         });
@@ -204,28 +247,34 @@ class Dashboard {
 
     // Esporta dati in CSV
     exportToCSV() {
-        const data = window.filterManager.getFilteredData();
-        if (!data || data.length === 0) {
-            alert('Nessun dato da esportare');
+        const selectedOperators = window.filterManager.selectedOperators;
+        if (selectedOperators.length === 0) {
+            alert('Seleziona almeno un operatore per esportare i dati');
             return;
         }
 
-        const dataType = window.filterManager.currentDataType;
-        const operatorName = window.filterManager.currentOperator;
-        
-        // Crea header CSV
-        const headers = ['Timestamp', this.getDataTypeLabel(dataType)];
-        const csvContent = [
-            headers.join(','),
-            ...data.map(item => `${item.timestamp},${item.value}`)
-        ].join('\n');
+        const allData = window.dataLoader.getAllData();
+        let csvContent = 'Operatore,Tipo Dato,Timestamp,Valore\n';
 
-        // Crea e scarica file
+        selectedOperators.forEach(operator => {
+            if (allData[operator]) {
+                Object.keys(allData[operator]).forEach(dataType => {
+                    const data = allData[operator][dataType];
+                    if (Array.isArray(data)) {
+                        data.forEach(item => {
+                            const timestamp = window.dataLoader.convertTimestamp(item.unixTimestamp);
+                            csvContent += `${operator},${this.getDataTypeLabel(dataType)},${timestamp},${item.value}\n`;
+                        });
+                    }
+                });
+            }
+        });
+
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
         link.setAttribute('href', url);
-        link.setAttribute('download', `${operatorName}_${dataType}_${new Date().toISOString().slice(0,10)}.csv`);
+        link.setAttribute('download', `dati_operatori_${new Date().toISOString().split('T')[0]}.csv`);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
@@ -236,44 +285,53 @@ class Dashboard {
     getDataTypeLabel(dataType) {
         const labels = {
             'bpm': 'Battiti per Minuto',
-            'distance': 'Distanza (metri)',
-            'speed': 'Velocità (m/s)'
+            'distance': 'Distanza',
+            'speed': 'Velocità'
         };
         return labels[dataType] || dataType;
     }
 
     // Ottiene informazioni sui dati
     getDataInfo() {
+        const selectedOperators = window.filterManager.selectedOperators;
         const allData = window.dataLoader.getAllData();
-        const info = {
-            totalOperators: Object.keys(allData).length,
-            operators: Object.keys(allData),
-            dataTypes: ['bpm', 'distance', 'speed'],
-            totalRecords: 0
-        };
+        let totalRecords = 0;
+        let dateRange = { start: null, end: null };
 
-        Object.values(allData).forEach(operatorData => {
-            if (operatorData) {
-                Object.values(operatorData).forEach(dataTypeData => {
-                    if (dataTypeData) {
-                        info.totalRecords += dataTypeData.length;
+        selectedOperators.forEach(operator => {
+            if (allData[operator]) {
+                Object.keys(allData[operator]).forEach(dataType => {
+                    const data = allData[operator][dataType];
+                    if (Array.isArray(data)) {
+                        totalRecords += data.length;
+                        data.forEach(item => {
+                            const timestamp = new Date(item.timestamp);
+                            if (!dateRange.start || timestamp < dateRange.start) {
+                                dateRange.start = timestamp;
+                            }
+                            if (!dateRange.end || timestamp > dateRange.end) {
+                                dateRange.end = timestamp;
+                            }
+                        });
                     }
                 });
             }
         });
 
-        return info;
+        return {
+            operators: selectedOperators.length,
+            totalRecords,
+            dateRange
+        };
     }
 
-    // Debug: mostra informazioni sui dati
+    // Debug dei dati
     debugData() {
         const info = this.getDataInfo();
-        console.log('📊 Informazioni dati:', info);
-        
-        const allData = window.dataLoader.getAllData();
-        Object.entries(allData).forEach(([operator, data]) => {
-            console.log(`Operatore ${operator}:`, data);
-        });
+        console.log('📊 Informazioni sui dati:', info);
+        console.log('🎯 Operatori selezionati:', window.filterManager.selectedOperators);
+        console.log('📅 Giorno selezionato:', window.daySelector.getSelectedDay());
+        console.log('📈 Dati completi:', window.dataLoader.getAllData());
     }
 }
 

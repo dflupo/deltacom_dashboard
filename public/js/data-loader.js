@@ -2,6 +2,8 @@ class DataLoader {
     constructor() {
         this.operators = {};
         this.availableOperators = [];
+        this.availableDays = [];
+        this.selectedDays = [];
         this.apiBase = window.location.origin.includes('localhost') ? 'http://localhost:3051' : '';
     }
 
@@ -19,6 +21,29 @@ class DataLoader {
             second: '2-digit',
             hour12: false
         }).replace(',', '').replace(/\//g, '-');
+    }
+
+    // Formatta il nome del giorno/missione per la visualizzazione
+    formatDayName(dayName) {
+        // Se è in formato YYYYMMDD, converti in data leggibile
+        if (/^\d{8}$/.test(dayName)) {
+            const year = dayName.substring(0, 4);
+            const month = dayName.substring(4, 6);
+            const day = dayName.substring(6, 8);
+            const date = new Date(year, month - 1, day);
+            return date.toLocaleDateString('it-IT', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+        
+        // Se è un nome di missione, sostituisci _ con spazi e capitalizza
+        return dayName.replace(/_/g, ' ')
+                     .split(' ')
+                     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                     .join(' ');
     }
 
     // Carica un singolo file JSON
@@ -81,7 +106,20 @@ class DataLoader {
         return normalized;
     }
 
-    // Scansiona la cartella data per trovare tutti gli operatori tramite API
+    // Scansiona i giorni/missioni disponibili
+    async scanDays() {
+        try {
+            const res = await fetch(`${this.apiBase}/api/days`);
+            const data = await res.json();
+            this.availableDays = data.days || [];
+            return this.availableDays;
+        } catch (error) {
+            console.error('Errore nella scansione giorni:', error);
+            return [];
+        }
+    }
+
+    // Scansiona la cartella data per trovare tutti gli operatori tramite API (compatibilità)
     async scanOperators() {
         try {
             const res = await fetch(`${this.apiBase}/api/operators`);
@@ -98,7 +136,42 @@ class DataLoader {
         }
     }
 
-    // Carica i dati di un singolo operatore
+    // Carica i dati di un operatore da giorni specifici
+    async loadOperatorDataFromDays(operatorName, days) {
+        const dataTypes = ['bpm', 'distance', 'speed'];
+        const operatorData = {};
+
+        for (const day of days) {
+            for (const dataType of dataTypes) {
+                const dataFiles = [];
+                let fileIndex = 1;
+                let hasMoreFiles = true;
+                
+                while (hasMoreFiles) {
+                    const fileName = fileIndex === 1 ? `${dataType}.json` : `${dataType}${fileIndex}.json`;
+                    const filePath = `${this.apiBase}/data/${day}/${operatorName}/${fileName}`;
+                    const data = await this.loadJsonFile(filePath);
+                    if (data) {
+                        dataFiles.push(data);
+                        fileIndex++;
+                    } else {
+                        hasMoreFiles = false;
+                    }
+                }
+                
+                if (dataFiles.length > 0) {
+                    if (!operatorData[dataType]) {
+                        operatorData[dataType] = [];
+                    }
+                    operatorData[dataType].push(...dataFiles);
+                }
+            }
+        }
+        
+        this.operators[operatorName] = operatorData;
+    }
+
+    // Carica i dati di un singolo operatore (compatibilità)
     async loadOperatorData(operatorName) {
         const dataTypes = ['bpm', 'distance', 'speed'];
         const operatorData = {};
@@ -140,6 +213,29 @@ class DataLoader {
             allData[operatorName] = this.getOperatorData(operatorName);
         }
         return allData;
+    }
+
+    // Imposta il giorno selezionato e ricarica i dati (single-select)
+    async setSelectedDays(days) {
+        // Supporta solo un giorno alla volta
+        const day = days && days.length > 0 ? days[0] : null;
+        this.selectedDays = day ? [day] : [];
+        this.operators = {}; // Reset operatori
+        this.availableOperators = []; // Reset operatori disponibili
+
+        if (!day) return;
+
+        try {
+            const res = await fetch(`${this.apiBase}/api/operators/${day}`);
+            const data = await res.json();
+            const operators = data.operators || [];
+            this.availableOperators = [...operators];
+            for (const operator of operators) {
+                await this.loadOperatorDataFromDays(operator, [day]);
+            }
+        } catch (error) {
+            console.error(`Errore caricamento operatori per ${day}:`, error);
+        }
     }
 
     // Filtra i dati per intervallo temporale

@@ -2,22 +2,13 @@ class ChartManager {
     constructor() {
         this.operatorColors = {};
         this.charts = {};
+        // Palette a contrasto per massimo 5 serie
         this.HIGH_CONTRAST_COLORS = [
-            '#00eaff', // ciano
-            '#ff00c8', // magenta
-            '#00ff85', // lime
-            '#ffb300', // arancione
-            '#ffe600', // giallo
-            '#ff3b30', // rosso
-            '#2979ff', // blu elettrico
-            '#a259ff', // viola
-            '#00ffea', // verde acqua
-            '#ff6d00', // arancione scuro
-            '#ff1744', // rosso acceso
-            '#00e676', // verde acceso
-            '#ffd600', // giallo acceso
-            '#18ffff', // azzurro
-            '#f50057', // rosa acceso
+            '#3b82f6', // blu
+            '#ef4444', // rosso
+            '#10b981', // verde
+            '#f59e42', // arancione
+            '#a21caf', // viola
         ];
     }
 
@@ -31,13 +22,13 @@ class ChartManager {
         return color;
     }
 
-    // Assegna un colore ad alto contrasto a ogni operatore (ciclicamente)
+    // Assegna un colore unico e ben contrastato a ogni operatore (fino a 5 diversi)
     assignColors(operators) {
+        // Reset colori per evitare residui
+        this.operatorColors = {};
         operators.forEach((op, idx) => {
-            if (!this.operatorColors[op]) {
-                const colorIdx = idx % this.HIGH_CONTRAST_COLORS.length;
-                this.operatorColors[op] = this.HIGH_CONTRAST_COLORS[colorIdx];
-            }
+            const colorIdx = idx % this.HIGH_CONTRAST_COLORS.length;
+            this.operatorColors[op] = this.HIGH_CONTRAST_COLORS[colorIdx];
         });
     }
 
