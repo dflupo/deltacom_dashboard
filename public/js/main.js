@@ -45,6 +45,8 @@ class Dashboard {
         if (operators.length === 0) {
             throw new Error('Nessun operatore trovato');
         }
+        // Aggiorna la UI dei toggle operatori
+        window.filterManager.renderOperatorToggles();
     }
 
     // Inizializza i grafici (ora non serve più)
@@ -54,35 +56,68 @@ class Dashboard {
 
     // Popola i filtri con i dati disponibili
     populateFilters() {
-        const operators = window.dataLoader.availableOperators;
-        window.filterManager.populateOperatorSelect(operators);
+        // Non serve più popolare il selettore operatori
+        // La UI dei toggle si aggiorna automaticamente
         const allData = window.dataLoader.getAllData();
         window.filterManager.setTimeRanges(allData);
     }
 
     // Aggiorna i grafici (solo 3, uno per metrica)
     updateMainChart() {
-        let data = window.filterManager.getFilteredData();
-        let selectedOperators = [];
-        if (window.filterManager.currentOperator === 'all') {
-            data = data || {};
-            selectedOperators = Object.keys(data);
-        } else {
-            const op = window.filterManager.currentOperator;
-            data = { [op]: data };
-            selectedOperators = [op];
+        const selectedOperators = window.filterManager.selectedOperators;
+        if (!selectedOperators || selectedOperators.length === 0) {
+            window.chartManager.renderAllCharts({}, []);
+            return;
         }
-        window.chartManager.renderAllCharts(data, selectedOperators);
+        const allData = window.dataLoader.getAllData();
+        // Applico il filtro temporale hardcoded a tutti gli operatori attivi
+        const start = '2025-06-30T00:00';
+        const end = '2025-06-30T23:59';
+        const filteredData = {};
+        selectedOperators.forEach(op => {
+            if (allData[op]) {
+                filteredData[op] = {};
+                Object.keys(allData[op]).forEach(metric => {
+                    if (Array.isArray(allData[op][metric])) {
+                        let filtered = allData[op][metric].filter(item => {
+                            const t = new Date(item.timestamp);
+                            return t >= new Date(start) && t <= new Date(end);
+                        });
+                        // Applica la somma cumulativa solo alla distanza
+                        if (metric === 'distance') {
+                            let sum = 0;
+                            filtered = filtered.map(item => {
+                                sum += item.value;
+                                return { ...item, value: sum };
+                            });
+                        }
+                        // Filtro dinamico per spike di velocità
+                        if (metric === 'speed' && filtered.length > 0) {
+                            const values = filtered.map(item => item.value);
+                            const mean = values.reduce((a, b) => a + b, 0) / values.length;
+                            const std = Math.sqrt(values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length);
+                            const threshold = mean + 3 * std;
+                            filtered = filtered.filter(item => item.value <= threshold);
+                        }
+                        filteredData[op][metric] = filtered;
+                    }
+                });
+            }
+        });
+        window.chartManager.renderAllCharts(filteredData, selectedOperators);
     }
 
     // Aggiorna le statistiche (solo se un operatore selezionato)
     updateStats() {
-        let data = window.filterManager.getFilteredData();
-        if (window.filterManager.currentOperator === 'all' || !data) {
+        // Statistiche solo se un operatore attivo
+        const selectedOperators = window.filterManager.selectedOperators;
+        if (!selectedOperators || selectedOperators.length !== 1) {
             this.updateStatElements('-', '-', '-', '-');
             return;
         }
-        // Prendi solo la metrica BPM per le statistiche
+        const op = selectedOperators[0];
+        const allData = window.dataLoader.getAllData();
+        const data = allData[op] || {};
         const bpmData = data['bpm'] || [];
         if (!bpmData.length) {
             this.updateStatElements('-', '-', '-', '-');

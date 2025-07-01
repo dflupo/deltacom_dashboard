@@ -1,220 +1,82 @@
 class FilterManager {
     constructor() {
         this.currentOperator = '';
-        this.startTime = null;
-        this.endTime = null;
+        // Imposto i limiti hardcoded per il 30 giugno 2025
+        this.startTime = '2025-06-30T00:00';
+        this.endTime = '2025-06-30T23:59';
         this.selectedOperators = [];
-        
-        this.initEventListeners();
+        this.currentDataType = 'bpm'; // default metrica
+        this.initOperatorToggleUI();
     }
 
-    // Inizializza gli event listener
-    initEventListeners() {
-        // Filtro operatore
-        const operatorSelect = document.getElementById('operator-select');
-        if (operatorSelect) {
-            operatorSelect.addEventListener('change', (e) => {
-                this.currentOperator = e.target.value;
-                this.onFilterChange();
-            });
-        }
-
-        // Filtri temporali
-        const startTimeInput = document.getElementById('start-time');
-        const endTimeInput = document.getElementById('end-time');
-        
-        if (startTimeInput) {
-            startTimeInput.addEventListener('change', (e) => {
-                this.startTime = e.target.value;
-                this.onFilterChange();
-            });
-        }
-
-        if (endTimeInput) {
-            endTimeInput.addEventListener('change', (e) => {
-                this.endTime = e.target.value;
-                this.onFilterChange();
-            });
-        }
-
-        // Pulsante applica filtri
-        const applyFiltersBtn = document.getElementById('apply-filters');
-        if (applyFiltersBtn) {
-            applyFiltersBtn.addEventListener('click', () => {
-                this.onFilterChange();
-            });
-        }
+    // Inizializza la UI dei pulsanti toggle operatori
+    initOperatorToggleUI() {
+        // Rimosso DOMContentLoaded: la chiamata verrà fatta esplicitamente dopo il caricamento operatori
     }
 
-    // Popola il selettore degli operatori
-    populateOperatorSelect(operators) {
-        const operatorSelect = document.getElementById('operator-select');
-        if (!operatorSelect) return;
-
-        // Pulisci le opzioni esistenti
-        operatorSelect.innerHTML = '';
-
-        // Aggiungi l'opzione 'Tutti' come default
-        const allOption = document.createElement('option');
-        allOption.value = 'all';
-        allOption.textContent = 'Tutti';
-        operatorSelect.appendChild(allOption);
-
-        // Aggiungi gli operatori disponibili
-        operators.forEach(operator => {
-            const option = document.createElement('option');
-            option.value = operator;
-            option.textContent = operator.charAt(0).toUpperCase() + operator.slice(1);
-            operatorSelect.appendChild(option);
-        });
-
-        // Seleziona 'Tutti' di default
-        operatorSelect.value = 'all';
-        this.currentOperator = 'all';
-    }
-
-    // Popola i checkbox per il confronto multi-operatore
-    populateOperatorCheckboxes(operators) {
-        const checkboxesContainer = document.getElementById('operator-checkboxes');
-        if (!checkboxesContainer) return;
-
-        checkboxesContainer.innerHTML = '';
-
-        operators.forEach(operator => {
-            const checkboxItem = document.createElement('div');
-            checkboxItem.className = 'checkbox-item';
-            
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.id = `operator-${operator}`;
-            checkbox.value = operator;
-            
-            const label = document.createElement('label');
-            label.htmlFor = `operator-${operator}`;
-            label.textContent = operator.charAt(0).toUpperCase() + operator.slice(1);
-            
-            checkboxItem.appendChild(checkbox);
-            checkboxItem.appendChild(label);
-            
-            // Event listener per il checkbox
-            checkbox.addEventListener('change', (e) => {
-                this.updateSelectedOperators();
-            });
-            
-            checkboxesContainer.appendChild(checkboxItem);
-        });
-    }
-
-    // Aggiorna la lista degli operatori selezionati per il confronto
-    updateSelectedOperators() {
-        const checkboxes = document.querySelectorAll('#operator-checkboxes input[type="checkbox"]:checked');
-        this.selectedOperators = Array.from(checkboxes).map(cb => cb.value);
-        
-        // Trigger per aggiornare il grafico di confronto
-        if (window.dashboard) {
-            window.dashboard.updateComparisonChart();
-        }
-    }
-
-    // Imposta i range temporali basati sui dati disponibili
-    setTimeRanges(allData) {
-        const startTimeInput = document.getElementById('start-time');
-        const endTimeInput = document.getElementById('end-time');
-        
-        if (!startTimeInput || !endTimeInput) return;
-
-        // Trova il range temporale globale
-        let globalMinTime = null;
-        let globalMaxTime = null;
-
-        Object.values(allData).forEach(operatorData => {
-            if (!operatorData) return;
-            
-            Object.values(operatorData).forEach(dataTypeData => {
-                if (!dataTypeData || dataTypeData.length === 0) return;
-                
-                const minTime = new Date(dataTypeData[0].timestamp);
-                const maxTime = new Date(dataTypeData[dataTypeData.length - 1].timestamp);
-                
-                if (!globalMinTime || minTime < globalMinTime) {
-                    globalMinTime = minTime;
+    // Renderizza i pulsanti toggle per gli operatori
+    renderOperatorToggles() {
+        const group = document.getElementById('operator-toggle-group');
+        if (!group) return;
+        group.innerHTML = '';
+        const operators = window.dataLoader ? window.dataLoader.availableOperators : [];
+        this.selectedOperators = [...operators]; // tutti attivi di default
+        operators.forEach(op => {
+            const btn = document.createElement('button');
+            btn.className = 'operator-toggle-btn active';
+            btn.textContent = op.charAt(0).toUpperCase() + op.slice(1);
+            btn.dataset.operator = op;
+            btn.onclick = () => {
+                btn.classList.toggle('active');
+                if (btn.classList.contains('active')) {
+                    if (!this.selectedOperators.includes(op)) this.selectedOperators.push(op);
+                } else {
+                    this.selectedOperators = this.selectedOperators.filter(o => o !== op);
                 }
-                
-                if (!globalMaxTime || maxTime > globalMaxTime) {
-                    globalMaxTime = maxTime;
-                }
-            });
-        });
-
-        if (globalMinTime && globalMaxTime) {
-            // Formatta le date per input datetime-local
-            const formatDateForInput = (date) => {
-                return date.toISOString().slice(0, 16);
+                this.onOperatorToggleChange();
             };
+            group.appendChild(btn);
+        });
+        this.onOperatorToggleChange();
+    }
 
-            startTimeInput.min = formatDateForInput(globalMinTime);
-            startTimeInput.max = formatDateForInput(globalMaxTime);
-            endTimeInput.min = formatDateForInput(globalMinTime);
-            endTimeInput.max = formatDateForInput(globalMaxTime);
-
-            // Imposta valori di default su tutto l'intervallo disponibile
-            startTimeInput.value = formatDateForInput(globalMinTime);
-            endTimeInput.value = formatDateForInput(globalMaxTime);
-            
-            this.startTime = startTimeInput.value;
-            this.endTime = endTimeInput.value;
+    // Aggiorna i grafici quando cambia la selezione operatori
+    onOperatorToggleChange() {
+        if (window.dashboard) {
+            window.dashboard.updateMainChart();
+            window.dashboard.updateStats();
         }
     }
 
-    // Ottiene i dati filtrati per l'operatore corrente
+    // Sovrascrivo getFilteredData per compatibilità (non usato più il selettore)
     getFilteredData() {
-        if (!this.currentOperator || !window.dataLoader) {
-            return null;
-        }
-
-        // Se 'Tutti' è selezionato, restituisci i dati di tutti gli operatori
-        if (this.currentOperator === 'all') {
-            const allData = window.dataLoader.getAllData();
-            return allData;
-        }
-
-        const operatorData = window.dataLoader.getOperatorData(this.currentOperator);
-        if (!operatorData || !operatorData[this.currentDataType]) {
-            return null;
-        }
-
-        let data = operatorData[this.currentDataType];
-
-        // Applica filtri temporali
-        if (this.startTime || this.endTime) {
-            data = window.dataLoader.filterDataByTimeRange(data, this.startTime, this.endTime);
-        }
-
-        return data;
+        // Non più usato
+        return null;
     }
 
     // Ottiene tutti i dati per il confronto multi-operatore
     getAllFilteredData() {
         if (!window.dataLoader) return {};
-
         const allData = window.dataLoader.getAllData();
         const filteredData = {};
-
         this.selectedOperators.forEach(operatorName => {
             const operatorData = allData[operatorName];
-            if (operatorData && operatorData[this.currentDataType]) {
-                let data = operatorData[this.currentDataType];
-                
-                // Applica filtri temporali
-                if (this.startTime || this.endTime) {
+            if (operatorData) {
+                filteredData[operatorName] = {};
+                ['bpm', 'distance', 'speed'].forEach(metric => {
+                    let data = operatorData[metric] || [];
+                    // Applica filtro temporale hardcoded
                     data = window.dataLoader.filterDataByTimeRange(data, this.startTime, this.endTime);
-                }
-                
-                filteredData[operatorName] = data;
+                    filteredData[operatorName][metric] = data;
+                });
             }
         });
-
         return filteredData;
+    }
+
+    // Imposta i range temporali basati sui dati disponibili
+    setTimeRanges(allData) {
+        // Nessuna azione: filtro temporale hardcoded
     }
 
     // Callback quando cambiano i filtri

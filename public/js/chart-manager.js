@@ -2,6 +2,18 @@ class ChartManager {
     constructor() {
         this.operatorColors = {};
         this.charts = {};
+        this.HIGH_CONTRAST_COLORS = [
+            '#1f77b4', // blu
+            '#ff7f0e', // arancione
+            '#2ca02c', // verde
+            '#d62728', // rosso
+            '#9467bd', // viola
+            '#8c564b', // marrone
+            '#e377c2', // rosa
+            '#7f7f7f', // grigio
+            '#bcbd22', // giallo oliva
+            '#17becf'  // azzurro
+        ];
     }
 
     // Genera un colore random
@@ -14,11 +26,12 @@ class ChartManager {
         return color;
     }
 
-    // Assegna un colore random a ogni operatore (costante per la sessione)
+    // Assegna un colore ad alto contrasto a ogni operatore (ciclicamente)
     assignColors(operators) {
-        operators.forEach(op => {
+        operators.forEach((op, idx) => {
             if (!this.operatorColors[op]) {
-                this.operatorColors[op] = this.getRandomColor();
+                const colorIdx = idx % this.HIGH_CONTRAST_COLORS.length;
+                this.operatorColors[op] = this.HIGH_CONTRAST_COLORS[colorIdx];
             }
         });
     }
@@ -46,16 +59,9 @@ class ChartManager {
             // Costruisci datasets per ogni operatore
             const datasets = selectedOperators.map(op => {
                 const opData = operatorsData[op] && operatorsData[op][metric.key] ? operatorsData[op][metric.key] : [];
-                // Mappa timestamp -> valore
-                const valueMap = {};
-                opData.forEach(item => {
-                    valueMap[item.timestamp] = item.value;
-                });
-                // Allinea i dati su tutti i timestamp
-                const data = allTimestamps.map(ts => valueMap[ts] !== undefined ? valueMap[ts] : null);
                 return {
                     label: op.charAt(0).toUpperCase() + op.slice(1),
-                    data,
+                    data: opData.map(item => ({ x: item.timestamp, y: item.value })), // formato XY
                     borderColor: this.operatorColors[op],
                     backgroundColor: this.operatorColors[op] + '20',
                     borderWidth: 2,
@@ -75,8 +81,7 @@ class ChartManager {
             this.charts[metric.key] = new Chart(canvas, {
                 type: 'line',
                 data: {
-                    labels: allTimestamps,
-                    datasets: datasets
+                    datasets: datasets // labels non serve più
                 },
                 options: {
                     responsive: true,
@@ -84,12 +89,27 @@ class ChartManager {
                     plugins: {
                         title: { display: false },
                         legend: { display: false },
-                        tooltip: { mode: 'index', intersect: false }
+                        tooltip: { mode: 'index', intersect: false,
+                            callbacks: {
+                                title: (context) => {
+                                    const date = new Date(context[0].parsed.x);
+                                    return date.toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
+                                }
+                            }
+                        }
                     },
                     scales: {
                         x: {
+                            type: 'time',
                             display: true,
                             title: { display: true, text: 'Tempo' },
+                            time: {
+                                tooltipFormat: 'dd-MM-yyyy HH:mm:ss',
+                                displayFormats: {
+                                    hour: 'dd-MM-yyyy HH:mm',
+                                    minute: 'HH:mm'
+                                }
+                            },
                             ticks: { maxTicksLimit: 10, maxRotation: 45 }
                         },
                         y: {
@@ -113,10 +133,40 @@ class ChartManager {
                 `).join('');
             }
 
-            // Se nessun dato, mostra errore visivo
-            if (datasets.every(ds => ds.data.every(v => v === null))) {
+            // Se nessun dato, mostra errore visivo SOLO se tutti i dataset sono vuoti
+            const allEmpty = datasets.every(ds => !ds.data || ds.data.length === 0);
+            // Rimuovo eventuali errori precedenti
+            const prevError = canvas.parentElement.querySelector('.chart-error');
+            if (prevError) prevError.remove();
+            if (allEmpty) {
                 canvas.parentElement.insertAdjacentHTML('beforeend', '<div class="chart-error">Nessun dato disponibile per questa metrica</div>');
             }
+        });
+    }
+
+    // Aggiorna i grafici di confronto (wrapper per renderAllCharts)
+    updateComparisonChart(operatorsData, dataType, selectedOperators) {
+        // Se non vengono passati dati, usa quelli attualmente selezionati
+        if (!operatorsData || !selectedOperators) {
+            operatorsData = {};
+            selectedOperators = [];
+        }
+        this.renderAllCharts(operatorsData, selectedOperators);
+    }
+
+    // Pulisce tutti i grafici e le legende
+    clearCharts() {
+        Object.values(this.charts).forEach(chart => {
+            if (chart && typeof chart.destroy === 'function') {
+                chart.destroy();
+            }
+        });
+        this.charts = {};
+        // Svuota le legende
+        const legendIds = ['legend-bpm', 'legend-distance', 'legend-speed'];
+        legendIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = '';
         });
     }
 }

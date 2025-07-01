@@ -38,21 +38,25 @@ body {
 
 /* Filtri */
 .filters {
-    background: white;
-    padding: 25px;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    margin-bottom: 30px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    align-items: end;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 32px;
 }
 
 .filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    margin-bottom: 0;
+}
+
+.filter-group.operator-group {
+    flex: 0 0 30%;
+    min-width: 120px;
+}
+
+.filter-group.time-group {
+    flex: 0 0 50%;
+    min-width: 200px;
 }
 
 .filter-group label {
@@ -77,22 +81,16 @@ body {
     box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
 }
 
-.time-inputs {
-    display: flex;
-    gap: 10px;
-}
-
-.time-inputs input {
-    flex: 1;
-}
-
 .btn-primary {
+    flex: 0 0 20%;
+    min-width: 120px;
+    margin-bottom: 0;
+    height: 44px;
+    font-size: 1rem;
     background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
     color: white;
     border: none;
-    padding: 12px 25px;
     border-radius: 8px;
-    font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -106,6 +104,11 @@ body {
 
 .btn-primary:active {
     transform: translateY(0);
+}
+
+.time-inputs {
+    display: flex;
+    gap: 8px;
 }
 
 /* Statistiche */
@@ -212,6 +215,25 @@ body {
 }
 
 /* Responsive */
+@media (max-width: 900px) {
+    .filters {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    .filter-group.operator-group,
+    .filter-group.time-group,
+    .btn-primary {
+        flex: 1 1 100%;
+        min-width: 0;
+        width: 100%;
+    }
+    .btn-primary {
+        margin-top: 8px;
+        height: 40px;
+    }
+}
+
 @media (max-width: 768px) {
     .container {
         padding: 15px;
@@ -219,15 +241,6 @@ body {
     
     .header h1 {
         font-size: 2rem;
-    }
-    
-    .filters {
-        grid-template-columns: 1fr;
-        padding: 20px;
-    }
-    
-    .time-inputs {
-        flex-direction: column;
     }
     
     .stats {
@@ -320,4 +333,31 @@ canvas {
     height: 200px !important;
     max-height: 200px;
   }
+}
+
+.operator-toggle-group {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.operator-toggle-btn {
+  border: none;
+  outline: none;
+  padding: 8px 22px;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #e0e7ef;
+  color: #1a2233;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.operator-toggle-btn.active {
+  background: #1f77b4;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(31,119,180,0.10);
+}
+.operator-toggle-btn:focus {
+  outline: 2px solid #1f77b4;
 } 

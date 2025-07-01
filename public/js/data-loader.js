@@ -5,10 +5,20 @@ class DataLoader {
         this.apiBase = window.location.origin.includes('localhost') ? 'http://localhost:3001' : '';
     }
 
-    // Converte timestamp Unix in data leggibile
+    // Converte timestamp Unix in data leggibile (orario italiano CEST)
     convertTimestamp(unixTimestamp) {
         const date = new Date(parseInt(unixTimestamp) * 1000);
-        return date.toISOString().replace('T', ' ').substring(0, 19);
+        // Converti in orario italiano (CEST)
+        return date.toLocaleString('it-IT', {
+            timeZone: 'Europe/Rome',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        }).replace(',', '').replace(/\//g, '-');
     }
 
     // Carica un singolo file JSON
@@ -54,13 +64,16 @@ class DataLoader {
                 const dataArray = Array.isArray(operator[dataType]) ? operator[dataType] : [operator[dataType]];
                 const mergedData = this.mergeNumberedData(dataArray);
                 
-                // Converti in array di oggetti con timestamp normalizzato
+                // Converti in array di oggetti con timestamp ISO (UTC)
                 normalized[dataType] = Object.entries(mergedData)
-                    .map(([timestamp, value]) => ({
-                        timestamp: this.convertTimestamp(timestamp),
-                        value: parseFloat(value),
-                        unixTimestamp: parseInt(timestamp)
-                    }))
+                    .map(([timestamp, value]) => {
+                        const date = new Date(parseInt(timestamp) * 1000);
+                        return {
+                            timestamp: date.toISOString(), // <-- ISO per Chart.js
+                            value: parseFloat(value),
+                            unixTimestamp: parseInt(timestamp)
+                        };
+                    })
                     .sort((a, b) => a.unixTimestamp - b.unixTimestamp);
             }
         });
@@ -133,7 +146,12 @@ class DataLoader {
     filterDataByTimeRange(data, startTime, endTime) {
         if (!data) return [];
         return data.filter(item => {
-            const itemTime = new Date(item.timestamp);
+            // Converti il timestamp dell'item in oggetto Date (formato italiano DD-MM-YYYY HH:MM:SS)
+            const convertItalianTimestamp = (timestamp) => {
+                const parts = timestamp.split(/[- :]/);
+                return new Date(parts[2] + '-' + parts[1] + '-' + parts[0] + 'T' + parts[3] + ':' + parts[4] + ':' + parts[5]);
+            };
+            const itemTime = convertItalianTimestamp(item.timestamp);
             const start = startTime ? new Date(startTime) : new Date(0);
             const end = endTime ? new Date(endTime) : new Date();
             return itemTime >= start && itemTime <= end;
@@ -156,8 +174,13 @@ class DataLoader {
     // Calcola la durata totale
     calculateDuration(data) {
         if (!data || data.length < 2) return '0 min';
-        const firstTime = new Date(data[0].timestamp);
-        const lastTime = new Date(data[data.length - 1].timestamp);
+        // Converti i timestamp in formato italiano in oggetti Date
+        const convertItalianTimestamp = (timestamp) => {
+            const parts = timestamp.split(/[- :]/);
+            return new Date(parts[2] + '-' + parts[1] + '-' + parts[0] + 'T' + parts[3] + ':' + parts[4] + ':' + parts[5]);
+        };
+        const firstTime = convertItalianTimestamp(data[0].timestamp);
+        const lastTime = convertItalianTimestamp(data[data.length - 1].timestamp);
         const durationMs = lastTime - firstTime;
         const durationMinutes = Math.round(durationMs / (1000 * 60));
         if (durationMinutes < 60) {

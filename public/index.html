@@ -6,34 +6,17 @@
     <title>Dashboard Missione Militare</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 </head>
 <body>
     <div class="container">
         <!-- Header -->
         <header class="header">
-            <h1>📊 Dashboard Missione Militare</h1>
-            <p>Analisi dati operatori in tempo reale</p>
+            <h1>📊 Dashboard Deltacom</h1>
         </header>
 
-        <!-- Filtri -->
-        <div class="filters">
-            <div class="filter-group">
-                <label for="operator-select">Operatore:</label>
-                <select id="operator-select">
-                    <option value="">Caricamento operatori...</option>
-                </select>
-            </div>
-            
-            <div class="filter-group">
-                <label for="time-range">Intervallo Temporale:</label>
-                <div class="time-inputs">
-                    <input type="datetime-local" id="start-time" placeholder="Inizio">
-                    <input type="datetime-local" id="end-time" placeholder="Fine">
-                </div>
-            </div>
-            
-            <button id="apply-filters" class="btn-primary">Applica Filtri</button>
-        </div>
+        <!-- Sostituisco il selettore operatore e il pulsante applica filtri con i pulsanti toggle -->
+        <div id="operator-toggle-group" class="operator-toggle-group"></div>
 
         <!-- Grafici -->
         <div id="charts-section">
