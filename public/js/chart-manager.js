@@ -40,6 +40,14 @@ class ChartManager {
         ];
         this.assignColors(selectedOperators);
 
+        // Funzione per abbreviare i numeri (solo mobile)
+        function abbreviateNumber(value) {
+            if (value >= 1e6) return (value / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+            if (value >= 1e3) return (value / 1e3).toFixed(1).replace(/\.0$/, '') + 'k';
+            return value;
+        }
+        const isMobileOrTablet = window.matchMedia && window.matchMedia('(max-width: 1024px), (max-height: 600px)').matches;
+
         metrics.forEach(metric => {
             // Unione di tutti i timestamp disponibili per questa metrica
             let allTimestamps = new Set();
@@ -89,6 +97,9 @@ class ChartManager {
                             callbacks: {
                                 title: (context) => {
                                     const date = new Date(context[0].parsed.x);
+                                    if (isMobileOrTablet) {
+                                        return date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                                    }
                                     return date.toLocaleString('it-IT', { timeZone: 'Europe/Rome' });
                                 }
                             }
@@ -100,9 +111,9 @@ class ChartManager {
                             display: true,
                             title: { display: true, text: 'Tempo' },
                             time: {
-                                tooltipFormat: 'dd-MM-yyyy HH:mm:ss',
+                                tooltipFormat: isMobileOrTablet ? 'HH:mm:ss' : 'dd-MM-yyyy HH:mm:ss',
                                 displayFormats: {
-                                    hour: 'dd-MM-yyyy HH:mm',
+                                    hour: isMobileOrTablet ? 'HH:mm' : 'dd-MM-yyyy HH:mm',
                                     minute: 'HH:mm'
                                 }
                             },
@@ -110,8 +121,19 @@ class ChartManager {
                         },
                         y: {
                             display: true,
-                            title: { display: true, text: metric.unit },
-                            beginAtZero: false
+                            title: {
+                                display: isMobileOrTablet ? false : true,
+                                text: metric.unit
+                            },
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    if (isMobileOrTablet) {
+                                        return abbreviateNumber(value);
+                                    }
+                                    return value;
+                                }
+                            }
                         }
                     },
                     interaction: { mode: 'nearest', axis: 'x', intersect: false }

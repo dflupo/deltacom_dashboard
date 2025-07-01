@@ -366,7 +366,7 @@ canvas {
   transition: background 0.2s, box-shadow 0.2s, border 0.2s;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 700px), (max-height: 600px) {
   .chart-box {
     background: none !important;
     border-radius: 0 !important;
@@ -381,6 +381,12 @@ canvas {
     border-radius: 8px;
     box-shadow: none;
     border: none;
+  }
+  #charts-section {
+    gap: 40px;
+  }
+  #charts-section > div {
+    margin-bottom: 32px;
   }
 }
 
