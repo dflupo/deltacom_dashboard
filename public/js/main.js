@@ -126,14 +126,6 @@ class Dashboard {
                             const t = new Date(item.timestamp);
                             return t >= new Date(start) && t <= new Date(end);
                         });
-                        // Applica la somma cumulativa solo alla distanza
-                        if (metric === 'distance') {
-                            let sum = 0;
-                            filtered = filtered.map(item => {
-                                sum += item.value;
-                                return { ...item, value: sum };
-                            });
-                        }
                         // Filtro dinamico per spike di velocità
                         if (metric === 'speed' && filtered.length > 0) {
                             const values = filtered.map(item => item.value);

@@ -100,6 +100,24 @@ class DataLoader {
                         };
                     })
                     .sort((a, b) => a.unixTimestamp - b.unixTimestamp);
+
+                // Correzione distanza cumulativa con reset sensore
+                if (dataType === 'distance' && normalized[dataType].length > 0) {
+                    let corrected = [];
+                    let lastMax = 0;
+                    let prev = normalized[dataType][0].value;
+                    normalized[dataType].forEach((item, idx) => {
+                        if (item.value < prev) {
+                            lastMax += prev;
+                        }
+                        corrected.push({
+                            ...item,
+                            value: item.value + lastMax
+                        });
+                        prev = item.value;
+                    });
+                    normalized[dataType] = corrected;
+                }
             }
         });
 
