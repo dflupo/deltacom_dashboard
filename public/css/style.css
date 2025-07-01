@@ -324,6 +324,7 @@ body {
   box-shadow: 0 2px 16px rgba(0,0,0,0.18);
   margin-bottom: 0;
   border: 1px solid #292929;
+  transition: background 0.2s, box-shadow 0.2s, border 0.2s, padding 0.2s;
 }
 
 .chart-box h3 {
@@ -362,15 +363,24 @@ canvas {
   display: block;
   box-shadow: 0 2px 8px rgba(0,0,0,0.18);
   border: 1px solid #292929;
+  transition: background 0.2s, box-shadow 0.2s, border 0.2s;
 }
 
 @media (max-width: 700px) {
   .chart-box {
-    padding: 12px 4px 20px 4px;
+    background: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
   }
   canvas {
     height: 200px !important;
     max-height: 200px;
+    background: #232323;
+    border-radius: 8px;
+    box-shadow: none;
+    border: none;
   }
 }
 
