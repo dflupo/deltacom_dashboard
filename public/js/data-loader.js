@@ -2,7 +2,7 @@ class DataLoader {
     constructor() {
         this.operators = {};
         this.availableOperators = [];
-        this.apiBase = window.location.origin.includes('localhost') ? 'http://localhost:3001' : '';
+        this.apiBase = window.location.origin.includes('localhost') ? 'http://localhost:3051' : '';
     }
 
     // Converte timestamp Unix in data leggibile (orario italiano CEST)

@@ -280,23 +280,4 @@ class Dashboard {
 // Inizializza la dashboard quando il DOM è pronto
 document.addEventListener('DOMContentLoaded', () => {
     window.dashboard = new Dashboard();
-    
-    // Aggiungi pulsante debug (solo in sviluppo)
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        const debugBtn = document.createElement('button');
-        debugBtn.textContent = '🐛 Debug';
-        debugBtn.style.cssText = 'position: fixed; top: 10px; right: 10px; z-index: 1000; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 4px; cursor: pointer;';
-        debugBtn.onclick = () => window.dashboard.debugData();
-        document.body.appendChild(debugBtn);
-    }
-});
-
-// Aggiungi pulsante esporta CSV
-document.addEventListener('DOMContentLoaded', () => {
-    const exportBtn = document.createElement('button');
-    exportBtn.textContent = '📥 Esporta CSV';
-    exportBtn.className = 'btn-primary';
-    exportBtn.style.cssText = 'position: fixed; top: 10px; left: 10px; z-index: 1000;';
-    exportBtn.onclick = () => window.dashboard.exportToCSV();
-    document.body.appendChild(exportBtn);
 }); 

@@ -3,16 +3,21 @@ class ChartManager {
         this.operatorColors = {};
         this.charts = {};
         this.HIGH_CONTRAST_COLORS = [
-            '#1f77b4', // blu
-            '#ff7f0e', // arancione
-            '#2ca02c', // verde
-            '#d62728', // rosso
-            '#9467bd', // viola
-            '#8c564b', // marrone
-            '#e377c2', // rosa
-            '#7f7f7f', // grigio
-            '#bcbd22', // giallo oliva
-            '#17becf'  // azzurro
+            '#00eaff', // ciano
+            '#ff00c8', // magenta
+            '#00ff85', // lime
+            '#ffb300', // arancione
+            '#ffe600', // giallo
+            '#ff3b30', // rosso
+            '#2979ff', // blu elettrico
+            '#a259ff', // viola
+            '#00ffea', // verde acqua
+            '#ff6d00', // arancione scuro
+            '#ff1744', // rosso acceso
+            '#00e676', // verde acceso
+            '#ffd600', // giallo acceso
+            '#18ffff', // azzurro
+            '#f50057', // rosa acceso
         ];
     }
 
@@ -63,12 +68,12 @@ class ChartManager {
                     label: op.charAt(0).toUpperCase() + op.slice(1),
                     data: opData.map(item => ({ x: item.timestamp, y: item.value })), // formato XY
                     borderColor: this.operatorColors[op],
-                    backgroundColor: this.operatorColors[op] + '20',
+                    backgroundColor: this.operatorColors[op] + '60',
                     borderWidth: 2,
                     fill: false,
                     tension: 0.4,
-                    pointRadius: 2,
-                    pointHoverRadius: 5
+                    pointRadius: 1.2,
+                    pointHoverRadius: 3
                 };
             });
 
