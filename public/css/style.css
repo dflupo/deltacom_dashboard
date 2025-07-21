@@ -403,16 +403,17 @@ canvas {
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  background: #232323;
-  color: #e0e0e0;
-  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  background: var(--operator-color-light, #232323);
+  color: var(--operator-color, #e0e0e0);
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s, border-color 0.2s;
   box-shadow: 0 1px 4px rgba(0,0,0,0.10);
-  border: 1px solid #292929;
+  border: 2px solid var(--operator-color, #292929);
 }
 .operator-toggle-btn.active {
-  background: #fff;
-  color: #181818;
-  box-shadow: 0 2px 8px rgba(255,255,255,0.10);
+  background: var(--operator-color, #fff);
+  color: #fff;
+  box-shadow: 0 2px 8px var(--operator-color-dark, rgba(255,255,255,0.10));
+  border-color: var(--operator-color, #fff);
 }
 .operator-toggle-btn:focus {
   outline: 2px solid #fff;

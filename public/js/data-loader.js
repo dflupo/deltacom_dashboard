@@ -68,12 +68,31 @@ class DataLoader {
     // Unisce dati con numerazione (es. bpm.json + bpm2.json)
     mergeNumberedData(dataArray) {
         const merged = {};
+        let allValues = [];
         
         dataArray.forEach(data => {
             if (data && data.value) {
                 Object.assign(merged, data.value);
+                // Raccogli tutti i valori per ricalcolare min/max/mid
+                Object.values(data.value).forEach(val => {
+                    allValues.push(parseFloat(val));
+                });
             }
         });
+        
+        // Ricalcola le statistiche sui dati uniti
+        if (allValues.length > 0) {
+            const minValue = Math.min(...allValues);
+            const maxValue = Math.max(...allValues);
+            const midValue = Math.round((minValue + maxValue) / 2);
+            
+            return {
+                value: merged,
+                minValue: minValue,
+                midValue: midValue,
+                maxValue: maxValue
+            };
+        }
         
         return merged;
     }
@@ -89,8 +108,11 @@ class DataLoader {
                 const dataArray = Array.isArray(operator[dataType]) ? operator[dataType] : [operator[dataType]];
                 const mergedData = this.mergeNumberedData(dataArray);
                 
+                // Gestisci sia il formato vecchio (solo value) che quello nuovo (con min/max/mid)
+                const valueData = mergedData.value || mergedData;
+                
                 // Converti in array di oggetti con timestamp ISO (UTC)
-                normalized[dataType] = Object.entries(mergedData)
+                normalized[dataType] = Object.entries(valueData)
                     .map(([timestamp, value]) => {
                         const date = new Date(parseInt(timestamp) * 1000);
                         return {
@@ -162,18 +184,34 @@ class DataLoader {
         for (const day of days) {
             for (const dataType of dataTypes) {
                 const dataFiles = [];
-                let fileIndex = 1;
-                let hasMoreFiles = true;
                 
-                while (hasMoreFiles) {
-                    const fileName = fileIndex === 1 ? `${dataType}.json` : `${dataType}${fileIndex}.json`;
-                    const filePath = `${this.apiBase}/data/${day}/${operatorName}/${fileName}`;
-                    const data = await this.loadJsonFile(filePath);
-                    if (data) {
-                        dataFiles.push(data);
-                        fileIndex++;
-                    } else {
-                        hasMoreFiles = false;
+                // Prima controlla se ci sono cartelle numerate
+                const numberedFolders = await this.getNumberedFolders(day, operatorName);
+                
+                if (numberedFolders.length > 0) {
+                    // Carica dati da tutte le cartelle numerate
+                    for (const folder of numberedFolders) {
+                        const filePath = `${this.apiBase}/data/${day}/${operatorName}/${folder}/${dataType}.json`;
+                        const data = await this.loadJsonFile(filePath);
+                        if (data) {
+                            dataFiles.push(data);
+                        }
+                    }
+                } else {
+                    // Fallback al metodo precedente per file numerati nella stessa cartella
+                    let fileIndex = 1;
+                    let hasMoreFiles = true;
+                    
+                    while (hasMoreFiles) {
+                        const fileName = fileIndex === 1 ? `${dataType}.json` : `${dataType}${fileIndex}.json`;
+                        const filePath = `${this.apiBase}/data/${day}/${operatorName}/${fileName}`;
+                        const data = await this.loadJsonFile(filePath);
+                        if (data) {
+                            dataFiles.push(data);
+                            fileIndex++;
+                        } else {
+                            hasMoreFiles = false;
+                        }
                     }
                 }
                 
@@ -187,6 +225,27 @@ class DataLoader {
         }
         
         this.operators[operatorName] = operatorData;
+    }
+
+    // Rileva le cartelle numerate per un operatore in un giorno specifico
+    async getNumberedFolders(day, operatorName) {
+        try {
+            const response = await fetch(`${this.apiBase}/api/files/${day}/${operatorName}`);
+            if (!response.ok) {
+                return [];
+            }
+            const data = await response.json();
+            const files = data.files || [];
+            
+            // Filtra solo le cartelle numerate (che contengono solo numeri)
+            const numberedFolders = files.filter(file => /^\d+$/.test(file));
+            
+            // Ordina numericamente (1, 2, 3, 10, 11, etc.)
+            return numberedFolders.sort((a, b) => parseInt(a) - parseInt(b));
+        } catch (error) {
+            console.error(`Errore nel rilevamento cartelle numerate per ${operatorName} in ${day}:`, error);
+            return [];
+        }
     }
 
     // Carica i dati di un singolo operatore (compatibilità)

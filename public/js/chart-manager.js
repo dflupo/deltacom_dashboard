@@ -30,6 +30,11 @@ class ChartManager {
             const colorIdx = idx % this.HIGH_CONTRAST_COLORS.length;
             this.operatorColors[op] = this.HIGH_CONTRAST_COLORS[colorIdx];
         });
+        
+        // Sincronizza con FilterManager se disponibile
+        if (window.filterManager && window.filterManager.assignColors) {
+            window.filterManager.assignColors(operators);
+        }
     }
 
     renderAllCharts(operatorsData, selectedOperators) {

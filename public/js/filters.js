@@ -6,7 +6,32 @@ class FilterManager {
         this.endTime = '2025-06-30T23:59';
         this.selectedOperators = [];
         this.currentDataType = 'bpm'; // default metrica
+        
+        // Condivido la palette di colori con ChartManager
+        this.HIGH_CONTRAST_COLORS = [
+            '#3b82f6', // blu
+            '#ef4444', // rosso
+            '#10b981', // verde
+            '#f59e42', // arancione
+            '#a21caf', // viola
+        ];
+        this.operatorColors = {};
+        
         this.initOperatorToggleUI();
+    }
+
+    // Assegna colori agli operatori (stesso metodo di ChartManager)
+    assignColors(operators) {
+        this.operatorColors = {};
+        operators.forEach((op, idx) => {
+            const colorIdx = idx % this.HIGH_CONTRAST_COLORS.length;
+            this.operatorColors[op] = this.HIGH_CONTRAST_COLORS[colorIdx];
+        });
+        
+        // Sincronizza con ChartManager se disponibile
+        if (window.chartManager && window.chartManager.operatorColors) {
+            window.chartManager.operatorColors = { ...this.operatorColors };
+        }
     }
 
     // Inizializza la UI dei pulsanti toggle operatori
@@ -21,11 +46,24 @@ class FilterManager {
         group.innerHTML = '';
         const operators = window.dataLoader ? window.dataLoader.availableOperators : [];
         this.selectedOperators = [...operators]; // tutti attivi di default
+        
+        // Assegna colori agli operatori
+        this.assignColors(operators);
+        
         operators.forEach(op => {
             const btn = document.createElement('button');
             btn.className = 'operator-toggle-btn active';
             btn.textContent = op.charAt(0).toUpperCase() + op.slice(1);
             btn.dataset.operator = op;
+            
+            // Applica il colore specifico dell'operatore
+            const operatorColor = this.operatorColors[op];
+            if (operatorColor) {
+                btn.style.setProperty('--operator-color', operatorColor);
+                btn.style.setProperty('--operator-color-light', operatorColor + '20');
+                btn.style.setProperty('--operator-color-dark', operatorColor + '80');
+            }
+            
             btn.onclick = () => {
                 btn.classList.toggle('active');
                 if (btn.classList.contains('active')) {
