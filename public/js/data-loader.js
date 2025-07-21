@@ -65,7 +65,7 @@ class DataLoader {
         }
     }
 
-    // Unisce dati con numerazione (es. bpm.json + bpm2.json)
+    // Unisce dati da cartelle numerate (es. cartella 1/bpm.json + cartella 2/bpm.json)
     mergeNumberedData(dataArray) {
         const merged = {};
         let allValues = [];
@@ -160,21 +160,7 @@ class DataLoader {
     }
 
     // Scansiona la cartella data per trovare tutti gli operatori tramite API (compatibilità)
-    async scanOperators() {
-        try {
-            const res = await fetch(`${this.apiBase}/api/operators`);
-            const data = await res.json();
-            const operatorNames = data.operators || [];
-            for (const operatorName of operatorNames) {
-                await this.loadOperatorData(operatorName);
-            }
-            this.availableOperators = operatorNames;
-            return this.availableOperators;
-        } catch (error) {
-            console.error('Errore nella scansione operatori:', error);
-            return [];
-        }
-    }
+
 
     // Carica i dati di un operatore da giorni specifici
     async loadOperatorDataFromDays(operatorName, days) {
@@ -185,33 +171,14 @@ class DataLoader {
             for (const dataType of dataTypes) {
                 const dataFiles = [];
                 
-                // Prima controlla se ci sono cartelle numerate
+                // Carica dati dalle cartelle numerate
                 const numberedFolders = await this.getNumberedFolders(day, operatorName);
                 
-                if (numberedFolders.length > 0) {
-                    // Carica dati da tutte le cartelle numerate
-                    for (const folder of numberedFolders) {
-                        const filePath = `${this.apiBase}/data/${day}/${operatorName}/${folder}/${dataType}.json`;
-                        const data = await this.loadJsonFile(filePath);
-                        if (data) {
-                            dataFiles.push(data);
-                        }
-                    }
-                } else {
-                    // Fallback al metodo precedente per file numerati nella stessa cartella
-                    let fileIndex = 1;
-                    let hasMoreFiles = true;
-                    
-                    while (hasMoreFiles) {
-                        const fileName = fileIndex === 1 ? `${dataType}.json` : `${dataType}${fileIndex}.json`;
-                        const filePath = `${this.apiBase}/data/${day}/${operatorName}/${fileName}`;
-                        const data = await this.loadJsonFile(filePath);
-                        if (data) {
-                            dataFiles.push(data);
-                            fileIndex++;
-                        } else {
-                            hasMoreFiles = false;
-                        }
+                for (const folder of numberedFolders) {
+                    const filePath = `${this.apiBase}/data/${day}/${operatorName}/${folder}/${dataType}.json`;
+                    const data = await this.loadJsonFile(filePath);
+                    if (data) {
+                        dataFiles.push(data);
                     }
                 }
                 
@@ -248,32 +215,7 @@ class DataLoader {
         }
     }
 
-    // Carica i dati di un singolo operatore (compatibilità)
-    async loadOperatorData(operatorName) {
-        const dataTypes = ['bpm', 'distance', 'speed'];
-        const operatorData = {};
 
-        for (const dataType of dataTypes) {
-            const dataFiles = [];
-            let fileIndex = 1;
-            let hasMoreFiles = true;
-            while (hasMoreFiles) {
-                const fileName = fileIndex === 1 ? `${dataType}.json` : `${dataType}${fileIndex}.json`;
-                const filePath = `${this.apiBase}/data/${operatorName}/${fileName}`;
-                const data = await this.loadJsonFile(filePath);
-                if (data) {
-                    dataFiles.push(data);
-                    fileIndex++;
-                } else {
-                    hasMoreFiles = false;
-                }
-            }
-            if (dataFiles.length > 0) {
-                operatorData[dataType] = dataFiles;
-            }
-        }
-        this.operators[operatorName] = operatorData;
-    }
 
     // Ottiene i dati normalizzati di un operatore
     getOperatorData(operatorName) {
