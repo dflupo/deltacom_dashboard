@@ -298,6 +298,18 @@ body {
         flex-direction: column;
         align-items: center;
     }
+    
+    /* Responsive per filtri orari su schermi molto piccoli */
+    .time-filters-container {
+        flex-direction: column;
+        gap: 8px;
+        padding: 16px;
+        min-width: auto;
+    }
+    
+    .time-input {
+        width: 140px;
+    }
 }
 
 /* Animazioni */
@@ -394,7 +406,70 @@ canvas {
   display: flex;
   gap: 12px;
   margin-bottom: 18px;
+  justify-content: space-between;
+  align-items: center;
 }
+
+.operators-container {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.time-filters-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #232323;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid #292929;
+  min-width: 280px;
+}
+
+.time-input {
+  background: #181818;
+  border: 1px solid #292929;
+  border-radius: 6px;
+  color: #fafafa;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  width: 110px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.time-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.time-separator {
+  color: #bdbdbd;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.reset-time-btn {
+  background: #333;
+  color: #bdbdbd;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.reset-time-btn:hover {
+  background: #444;
+  color: #e0e0e0;
+  border-color: #555;
+}
+
 .operator-toggle-btn {
   border: none;
   outline: none;
@@ -593,5 +668,23 @@ canvas {
     
     .day-id {
         font-size: 0.8rem;
+    }
+    
+    /* Responsive per filtri orari */
+    .operator-toggle-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+    }
+    
+    .time-filters-container {
+        justify-content: center;
+        padding: 12px;
+        min-width: auto;
+        width: 100%;
+    }
+    
+    .time-input {
+        width: 120px;
     }
 } 

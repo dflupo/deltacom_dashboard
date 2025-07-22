@@ -4,6 +4,9 @@ class FilterManager {
         // Imposto i limiti hardcoded per il 30 giugno 2025
         this.startTime = '2025-06-30T00:00';
         this.endTime = '2025-06-30T23:59';
+        // Aggiungo filtri orari con default 00:00 - 23:59
+        this.startHour = '00:00';
+        this.endHour = '23:59';
         this.selectedOperators = [];
         this.currentDataType = 'bpm'; // default metrica
         
@@ -50,6 +53,11 @@ class FilterManager {
         // Assegna colori agli operatori
         this.assignColors(operators);
         
+        // Container per operatori e filtri orari
+        const operatorsContainer = document.createElement('div');
+        operatorsContainer.className = 'operators-container';
+        
+        // Aggiungi pulsanti operatori
         operators.forEach(op => {
             const btn = document.createElement('button');
             btn.className = 'operator-toggle-btn active';
@@ -73,8 +81,57 @@ class FilterManager {
                 }
                 this.onOperatorToggleChange();
             };
-            group.appendChild(btn);
+            operatorsContainer.appendChild(btn);
         });
+        
+        // Container per filtri orari (spostato a destra)
+        const timeFiltersContainer = document.createElement('div');
+        timeFiltersContainer.className = 'time-filters-container';
+        
+        // Input ora inizio
+        const startHourInput = document.createElement('input');
+        startHourInput.type = 'time';
+        startHourInput.className = 'time-input';
+        startHourInput.value = this.startHour;
+        startHourInput.onchange = (e) => {
+            this.startHour = e.target.value;
+            this.onTimeFilterChange();
+        };
+        timeFiltersContainer.appendChild(startHourInput);
+        
+        // Separatore
+        const separator = document.createElement('span');
+        separator.className = 'time-separator';
+        separator.textContent = '-';
+        timeFiltersContainer.appendChild(separator);
+        
+        // Input ora fine
+        const endHourInput = document.createElement('input');
+        endHourInput.type = 'time';
+        endHourInput.className = 'time-input';
+        endHourInput.value = this.endHour;
+        endHourInput.onchange = (e) => {
+            this.endHour = e.target.value;
+            this.onTimeFilterChange();
+        };
+        timeFiltersContainer.appendChild(endHourInput);
+        
+        // Pulsante reset
+        const resetBtn = document.createElement('button');
+        resetBtn.className = 'reset-time-btn';
+        resetBtn.textContent = 'Reset';
+        resetBtn.onclick = () => {
+            this.resetTimeFilters();
+            startHourInput.value = this.startHour;
+            endHourInput.value = this.endHour;
+            this.onTimeFilterChange();
+        };
+        timeFiltersContainer.appendChild(resetBtn);
+        
+        // Aggiungi entrambi i container al gruppo principale
+        group.appendChild(operatorsContainer);
+        group.appendChild(timeFiltersContainer);
+        
         this.onOperatorToggleChange();
     }
 
@@ -84,6 +141,20 @@ class FilterManager {
             window.dashboard.updateMainChart();
             window.dashboard.updateStats();
         }
+    }
+
+    // Aggiorna i grafici quando cambiano i filtri orari
+    onTimeFilterChange() {
+        if (window.dashboard) {
+            window.dashboard.updateMainChart();
+            window.dashboard.updateStats();
+        }
+    }
+
+    // Resetta i filtri orari ai valori di default
+    resetTimeFilters() {
+        this.startHour = '00:00';
+        this.endHour = '23:59';
     }
 
     // Sovrascrivo getFilteredData per compatibilità (non usato più il selettore)
@@ -105,11 +176,42 @@ class FilterManager {
                     let data = operatorData[metric] || [];
                     // Applica filtro temporale hardcoded
                     data = window.dataLoader.filterDataByTimeRange(data, this.startTime, this.endTime);
+                    // Applica filtro orario
+                    data = this.filterDataByHourRange(data);
                     filteredData[operatorName][metric] = data;
                 });
             }
         });
         return filteredData;
+    }
+
+    // Filtra i dati per intervallo orario
+    filterDataByHourRange(data) {
+        if (!data || !this.startHour || !this.endHour) return data;
+        
+        return data.filter(item => {
+            // Controlli di sicurezza
+            if (!item || !item.timestamp || typeof item.timestamp !== 'string') {
+                return false; // Escludi item senza timestamp valido
+            }
+            
+            try {
+                // Converti il timestamp ISO in oggetto Date
+                const date = new Date(item.timestamp);
+                if (isNaN(date.getTime())) {
+                    return false; // Escludi date non valide
+                }
+                
+                // Estrai l'ora in formato HH:MM dal timestamp ISO
+                const itemHour = date.toTimeString().substring(0, 5); // Prende HH:MM
+                
+                // Confronta con i range orari
+                return itemHour >= this.startHour && itemHour <= this.endHour;
+            } catch (error) {
+                console.warn('Errore nel parsing del timestamp:', item.timestamp, error);
+                return false; // Escludi item con timestamp non valido
+            }
+        });
     }
 
     // Imposta i range temporali basati sui dati disponibili

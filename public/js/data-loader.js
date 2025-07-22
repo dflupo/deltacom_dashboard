@@ -58,7 +58,21 @@ class DataLoader {
                 }
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            return await response.json();
+            
+            // Controlla se la risposta è vuota
+            const text = await response.text();
+            if (!text || text.trim() === '') {
+                console.info(`File vuoto ignorato: ${path}`);
+                return null;
+            }
+            
+            // Prova a parsare il JSON
+            try {
+                return JSON.parse(text);
+            } catch (jsonError) {
+                console.warn(`File JSON non valido ignorato: ${path}`, jsonError);
+                return null;
+            }
         } catch (error) {
             console.error(`Errore nel caricamento di ${path}:`, error);
             return null;
@@ -70,7 +84,15 @@ class DataLoader {
         const merged = {};
         let allValues = [];
         
-        dataArray.forEach(data => {
+        // Filtra solo i dati validi
+        const validData = dataArray.filter(data => data && data.value && Object.keys(data.value).length > 0);
+        
+        if (validData.length === 0) {
+            console.info('Nessun dato valido trovato per il merge');
+            return { value: {} };
+        }
+        
+        validData.forEach(data => {
             if (data && data.value) {
                 Object.assign(merged, data.value);
                 // Raccogli tutti i valori per ricalcolare min/max/mid
@@ -94,7 +116,7 @@ class DataLoader {
             };
         }
         
-        return merged;
+        return { value: merged };
     }
 
     // Normalizza i dati di un operatore
@@ -110,6 +132,13 @@ class DataLoader {
                 
                 // Gestisci sia il formato vecchio (solo value) che quello nuovo (con min/max/mid)
                 const valueData = mergedData.value || mergedData;
+                
+                // Controlla se ci sono dati validi
+                if (!valueData || Object.keys(valueData).length === 0) {
+                    console.info(`Nessun dato valido per ${operatorName}/${dataType}`);
+                    normalized[dataType] = [];
+                    return;
+                }
                 
                 // Converti in array di oggetti con timestamp ISO (UTC)
                 normalized[dataType] = Object.entries(valueData)
@@ -140,6 +169,9 @@ class DataLoader {
                     });
                     normalized[dataType] = corrected;
                 }
+            } else {
+                // Se non ci sono dati per questo tipo, inizializza array vuoto
+                normalized[dataType] = [];
             }
         });
 

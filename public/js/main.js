@@ -51,6 +51,9 @@ class Dashboard {
             // Mostra loading
             this.showLoading();
             
+            // Reset filtri orari quando cambia la data
+            window.filterManager.resetTimeFilters();
+            
             // Aggiorna la UI dei toggle operatori
             window.filterManager.renderOperatorToggles();
             
@@ -126,6 +129,10 @@ class Dashboard {
                             const t = new Date(item.timestamp);
                             return t >= new Date(start) && t <= new Date(end);
                         });
+                        
+                        // Applica filtro orario
+                        filtered = window.filterManager.filterDataByHourRange(filtered);
+                        
                         // Filtro dinamico per spike di velocità
                         if (metric === 'speed' && filtered.length > 0) {
                             const values = filtered.map(item => item.value);
