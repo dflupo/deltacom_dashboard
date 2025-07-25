@@ -52,10 +52,13 @@ class FilterManager {
         operatorsContainer.className = 'operators-container';
         
         // Aggiungi pulsanti operatori
+        const showNames = window.isOperatorNameVisible && window.isOperatorNameVisible();
         operators.forEach(op => {
             const btn = document.createElement('button');
             btn.className = 'operator-toggle-btn active';
-            btn.textContent = op.charAt(0).toUpperCase() + op.slice(1);
+            btn.textContent = showNames
+                ? op.charAt(0).toUpperCase() + op.slice(1)
+                : (window.OPERATOR_NAME_ID_MAP[op] || op);
             btn.dataset.operator = op;
             
             // Applica il colore specifico dell'operatore
@@ -253,6 +256,17 @@ class FilterManager {
         };
     }
 }
+
+// === MAPPING OPERATORI: nome <-> id ===
+window.OPERATOR_NAME_ID_MAP = {
+    lecce: 74,
+    lastilla: 75,
+    guadalupi: 70,
+    midulla: 67,
+    lupo: 69,
+    schichilone: 34
+};
+window.OPERATOR_ID_NAME_MAP = Object.fromEntries(Object.entries(window.OPERATOR_NAME_ID_MAP).map(([k,v])=>[v,k.charAt(0).toUpperCase()+k.slice(1)]));
 
 // Istanza globale del filter manager
 window.filterManager = new FilterManager(); 

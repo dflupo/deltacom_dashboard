@@ -84,10 +84,13 @@ class ChartManager {
             allTimestamps = Array.from(allTimestamps).sort();
 
             // Costruisci datasets per ogni operatore
+            const showNames = window.isOperatorNameVisible && window.isOperatorNameVisible();
             const datasets = selectedOperators.map(op => {
                 const opData = operatorsData[op] && operatorsData[op][metric.key] ? operatorsData[op][metric.key] : [];
                 return {
-                    label: op.charAt(0).toUpperCase() + op.slice(1),
+                    label: showNames
+                        ? op.charAt(0).toUpperCase() + op.slice(1)
+                        : (window.OPERATOR_NAME_ID_MAP && window.OPERATOR_NAME_ID_MAP[op] ? window.OPERATOR_NAME_ID_MAP[op] : op),
                     data: opData.map(item => ({ x: item.timestamp, y: item.value })), // formato XY
                     borderColor: this.operatorColors[op],
                     backgroundColor: this.operatorColors[op] + '60',
@@ -169,7 +172,10 @@ class ChartManager {
                 legendDiv.innerHTML = selectedOperators.map(op => `
                     <span style="display:inline-block;margin-right:16px;">
                         <span style="display:inline-block;width:16px;height:4px;background:${this.operatorColors[op]};margin-right:6px;vertical-align:middle;"></span>
-                        <span style="vertical-align:middle;">${op.charAt(0).toUpperCase() + op.slice(1)}</span>
+                        <span style="vertical-align:middle;">${showNames
+                            ? op.charAt(0).toUpperCase() + op.slice(1)
+                            : (window.OPERATOR_NAME_ID_MAP && window.OPERATOR_NAME_ID_MAP[op] ? window.OPERATOR_NAME_ID_MAP[op] : op)
+                        }</span>
                     </span>
                 `).join('');
             }

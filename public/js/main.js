@@ -368,6 +368,22 @@ function loadThemePreference() {
     return true;
 }
 
+// === VISIBILITÀ NOMI OPERATORI ===
+function setOperatorNameVisibility(isVisible) {
+    localStorage.setItem('operatorNameVisible', isVisible ? '1' : '0');
+}
+
+function loadOperatorNameVisibility() {
+    const pref = localStorage.getItem('operatorNameVisible');
+    if (pref === '0') return false;
+    if (pref === '1') return true;
+    return false; // default: nascosto
+}
+
+window.isOperatorNameVisible = function() {
+    return loadOperatorNameVisibility();
+};
+
 // Inizializza la dashboard quando il DOM è pronto
 document.addEventListener('DOMContentLoaded', () => {
     window.dashboard = new Dashboard();
@@ -380,4 +396,30 @@ document.addEventListener('DOMContentLoaded', () => {
         setTheme(e.target.checked);
         localStorage.setItem('theme', e.target.checked ? 'dark' : 'light');
     });
+
+    // === Gestione toggle visibilità nomi operatori ===
+    const operatorVisibilityToggle = document.getElementById('operator-visibility-toggle');
+    const iconVisibilityOn = document.getElementById('icon-visibility-on');
+    const iconVisibilityOff = document.getElementById('icon-visibility-off');
+    function updateVisibilityIcons(isVisible) {
+        if (iconVisibilityOn && iconVisibilityOff) {
+            iconVisibilityOn.style.opacity = isVisible ? '0.3' : '1';
+            iconVisibilityOff.style.opacity = isVisible ? '1' : '0.3';
+        }
+    }
+    if (operatorVisibilityToggle) {
+        const isVisible = loadOperatorNameVisibility();
+        operatorVisibilityToggle.checked = isVisible;
+        updateVisibilityIcons(isVisible);
+        operatorVisibilityToggle.addEventListener('change', (e) => {
+            setOperatorNameVisibility(e.target.checked);
+            updateVisibilityIcons(e.target.checked);
+            // Aggiorna UI
+            if (window.filterManager) window.filterManager.renderOperatorToggles();
+            if (window.dashboard) {
+                window.dashboard.updateMainChart();
+                window.dashboard.updateStats();
+            }
+        });
+    }
 }); 
