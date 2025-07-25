@@ -11,11 +11,11 @@ class ChartManager {
             '#a21caf', // viola
         ];
         this.HIGH_CONTRAST_COLORS_LIGHT = [
-            '#1d4ed8', // blu più scuro
-            '#b91c1c', // rosso più scuro
-            '#047857', // verde più scuro
-            '#b45309', // arancione più scuro
-            '#7c3aed', // viola più chiaro
+            '#2563eb', // blu moderno e vivace
+            '#dc2626', // rosso moderno e vivace
+            '#059669', // verde moderno e vivace
+            '#ea580c', // arancione moderno e vivace
+            '#7c3aed', // viola moderno e vivace
         ];
         this._assignedOperators = [];
     }
