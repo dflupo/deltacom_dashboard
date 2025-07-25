@@ -169,10 +169,11 @@ class ChartManager {
             // Legenda custom sotto il grafico
             const legendDiv = document.getElementById(metric.legendId);
             if (legendDiv) {
+                const isDark = document.body.classList.contains('dark-mode');
                 legendDiv.innerHTML = selectedOperators.map(op => `
                     <span style="display:inline-block;margin-right:16px;">
                         <span style="display:inline-block;width:16px;height:4px;background:${this.operatorColors[op]};margin-right:6px;vertical-align:middle;"></span>
-                        <span style="vertical-align:middle;">${showNames
+                        <span style="vertical-align:middle;${!isDark ? '' : ''}" class="${!isDark ? 'operator-legend-label' : ''}">${showNames
                             ? op.charAt(0).toUpperCase() + op.slice(1)
                             : (window.OPERATOR_NAME_ID_MAP && window.OPERATOR_NAME_ID_MAP[op] ? window.OPERATOR_NAME_ID_MAP[op] : op)
                         }</span>

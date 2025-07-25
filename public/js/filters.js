@@ -264,7 +264,9 @@ window.OPERATOR_NAME_ID_MAP = {
     guadalupi: 70,
     midulla: 67,
     lupo: 69,
-    schichilone: 34
+    schichilone: 34,
+    pichelli: 71,
+    landonfi: 68
 };
 window.OPERATOR_ID_NAME_MAP = Object.fromEntries(Object.entries(window.OPERATOR_NAME_ID_MAP).map(([k,v])=>[v,k.charAt(0).toUpperCase()+k.slice(1)]));
 

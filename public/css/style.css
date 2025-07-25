@@ -777,3 +777,20 @@ body:not(.dark-mode) #icon-sun {
 body:not(.dark-mode) #icon-moon {
   opacity: 0.4;
 } 
+
+/* Stile per i nomi operatori in legenda SOLO in light mode */
+body:not(.dark-mode) .operator-legend-label {
+  color: #181818;
+  font-weight: 700;
+  text-shadow: 0 1px 4px #fff, 0 0px 1px #e0e0e0;
+  letter-spacing: 0.5px;
+  font-size: 1.05em;
+} 
+
+/* Rimuovi shadow da titolo e icona SOLO in light mode */
+body:not(.dark-mode) .header h1 {
+  text-shadow: none;
+}
+body:not(.dark-mode) .logo-img {
+  box-shadow: none;
+} 
