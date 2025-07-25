@@ -10,6 +10,27 @@ class ChartManager {
             '#f59e42', // arancione
             '#a21caf', // viola
         ];
+        this._assignedOperators = [];
+    }
+
+    // Assegna i colori a tutti gli operatori disponibili del giorno (fisso)
+    assignColorsToAllOperators(operators) {
+        this.operatorColors = {};
+        this._assignedOperators = [];
+        operators.forEach((op, idx) => {
+            this.operatorColors[op] = this.HIGH_CONTRAST_COLORS[idx % this.HIGH_CONTRAST_COLORS.length];
+            this._assignedOperators.push(op);
+        });
+        if (window.filterManager) {
+            window.filterManager.operatorColors = { ...this.operatorColors };
+        }
+    }
+
+    // Non riassegnare mai i colori, solo sincronizza la mappatura già esistente
+    assignColors(operators) {
+        if (window.filterManager) {
+            window.filterManager.operatorColors = { ...this.operatorColors };
+        }
     }
 
     // Genera un colore random
@@ -20,21 +41,6 @@ class ChartManager {
             color += letters[Math.floor(Math.random() * 16)];
         }
         return color;
-    }
-
-    // Assegna un colore unico e ben contrastato a ogni operatore (fino a 5 diversi)
-    assignColors(operators) {
-        // Reset colori per evitare residui
-        this.operatorColors = {};
-        operators.forEach((op, idx) => {
-            const colorIdx = idx % this.HIGH_CONTRAST_COLORS.length;
-            this.operatorColors[op] = this.HIGH_CONTRAST_COLORS[colorIdx];
-        });
-        
-        // Sincronizza con FilterManager se disponibile
-        if (window.filterManager && window.filterManager.assignColors) {
-            window.filterManager.assignColors(operators);
-        }
     }
 
     renderAllCharts(operatorsData, selectedOperators) {

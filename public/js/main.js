@@ -54,6 +54,11 @@ class Dashboard {
             // Reset filtri orari quando cambia la data
             window.filterManager.resetTimeFilters();
             
+            // Assegna i colori fissi agli operatori del giorno
+            if (window.chartManager && window.dataLoader) {
+                window.chartManager.assignColorsToAllOperators(window.dataLoader.availableOperators);
+            }
+            
             // Aggiorna la UI dei toggle operatori
             window.filterManager.renderOperatorToggles();
             

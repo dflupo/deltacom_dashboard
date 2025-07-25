@@ -25,15 +25,9 @@ class FilterManager {
 
     // Assegna colori agli operatori (stesso metodo di ChartManager)
     assignColors(operators) {
-        this.operatorColors = {};
-        operators.forEach((op, idx) => {
-            const colorIdx = idx % this.HIGH_CONTRAST_COLORS.length;
-            this.operatorColors[op] = this.HIGH_CONTRAST_COLORS[colorIdx];
-        });
-        
-        // Sincronizza con ChartManager se disponibile
+        // Non riassegnare mai i colori, usa sempre quelli di ChartManager
         if (window.chartManager && window.chartManager.operatorColors) {
-            window.chartManager.operatorColors = { ...this.operatorColors };
+            this.operatorColors = { ...window.chartManager.operatorColors };
         }
     }
 
@@ -50,7 +44,7 @@ class FilterManager {
         const operators = window.dataLoader ? window.dataLoader.availableOperators : [];
         this.selectedOperators = [...operators]; // tutti attivi di default
         
-        // Assegna colori agli operatori
+        // Sincronizza la mappatura colori già esistente
         this.assignColors(operators);
         
         // Container per operatori e filtri orari

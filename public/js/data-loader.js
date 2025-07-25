@@ -129,17 +129,11 @@ class DataLoader {
             if (operator[dataType]) {
                 const dataArray = Array.isArray(operator[dataType]) ? operator[dataType] : [operator[dataType]];
                 const mergedData = this.mergeNumberedData(dataArray);
-                
-                // Gestisci sia il formato vecchio (solo value) che quello nuovo (con min/max/mid)
                 const valueData = mergedData.value || mergedData;
-                
-                // Controlla se ci sono dati validi
                 if (!valueData || Object.keys(valueData).length === 0) {
-                    console.info(`Nessun dato valido per ${operatorName}/${dataType}`);
-                    normalized[dataType] = [];
+                    // Nessun dato valido per questa metrica
                     return;
                 }
-                
                 // Converti in array di oggetti con timestamp ISO (UTC)
                 normalized[dataType] = Object.entries(valueData)
                     .map(([timestamp, value]) => {
@@ -151,7 +145,6 @@ class DataLoader {
                         };
                     })
                     .sort((a, b) => a.unixTimestamp - b.unixTimestamp);
-
                 // Correzione distanza cumulativa con reset sensore
                 if (dataType === 'distance' && normalized[dataType].length > 0) {
                     let corrected = [];
@@ -169,12 +162,8 @@ class DataLoader {
                     });
                     normalized[dataType] = corrected;
                 }
-            } else {
-                // Se non ci sono dati per questo tipo, inizializza array vuoto
-                normalized[dataType] = [];
             }
         });
-
         return normalized;
     }
 
