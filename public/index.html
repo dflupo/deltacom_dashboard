@@ -103,6 +103,30 @@
       transform: translateX(20px);
       background: #222;
     }
+    /* Responsive: sposta i toggle ai lati su mobile */
+    @media (max-width: 768px) {
+      #theme-switcher {
+        right: 16px !important;
+        left: auto !important;
+        top: 16px !important;
+      }
+      #operator-visibility-switcher {
+        left: 16px !important;
+        right: auto !important;
+        top: 16px !important;
+      }
+      .header .logo-wrapper {
+        margin: 0 auto !important;
+        display: flex;
+        justify-content: center;
+      }
+      .header {
+        padding-top: 90px;
+      }
+    }
+    .header {
+      padding-top: 64px;
+    }
     </style>
 </body>
 </html> 
