@@ -129,6 +129,10 @@ class Dashboard {
                 filteredData[op] = {};
                 Object.keys(allData[op]).forEach(metric => {
                     if (Array.isArray(allData[op][metric])) {
+                        // DEBUG: loggo i timestamp ISO dei dati BPM di Lastilla prima del filtro orario
+                        if ((op === 'lastilla' || op === 'Lastilla') && metric === 'bpm') {
+                            console.log('DEBUG Timestamp ISO BPM Lastilla PRIMA del filtro:', allData[op][metric].map(item => item.timestamp));
+                        }
                         let filtered = allData[op][metric].filter(item => {
                             if (!start || !end) return true;
                             const t = new Date(item.timestamp);
@@ -152,6 +156,14 @@ class Dashboard {
             }
         });
         window.chartManager.renderAllCharts(filteredData, selectedOperators);
+        // DEBUG: loggo i dati filtrati di Lastilla
+        if (filteredData['lastilla']) {
+            console.log('DEBUG Lastilla BPM filtrati:', filteredData['lastilla'].bpm);
+            console.log('DEBUG Lastilla SPEED filtrati:', filteredData['lastilla'].speed);
+        } else if (filteredData['Lastilla']) {
+            console.log('DEBUG Lastilla BPM filtrati:', filteredData['Lastilla'].bpm);
+            console.log('DEBUG Lastilla SPEED filtrati:', filteredData['Lastilla'].speed);
+        }
     }
 
     // Aggiorna le statistiche (solo se un operatore selezionato)
@@ -339,7 +351,33 @@ class Dashboard {
     }
 }
 
+// === LIGHT/DARK MODE ===
+function setTheme(isDark) {
+    if (isDark) {
+        document.body.classList.add('dark-mode');
+    } else {
+        document.body.classList.remove('dark-mode');
+    }
+}
+
+function loadThemePreference() {
+    const pref = localStorage.getItem('theme');
+    if (pref === 'dark') return true;
+    if (pref === 'light') return false;
+    // Default: dark
+    return true;
+}
+
 // Inizializza la dashboard quando il DOM è pronto
 document.addEventListener('DOMContentLoaded', () => {
     window.dashboard = new Dashboard();
+    const themeToggle = document.getElementById('theme-toggle');
+    if (!themeToggle) return;
+    const isDark = loadThemePreference();
+    setTheme(isDark);
+    themeToggle.checked = !isDark ? false : true;
+    themeToggle.addEventListener('change', (e) => {
+        setTheme(e.target.checked);
+        localStorage.setItem('theme', e.target.checked ? 'dark' : 'light');
+    });
 }); 

@@ -3,22 +3,34 @@ class ChartManager {
         this.operatorColors = {};
         this.charts = {};
         // Palette a contrasto per massimo 5 serie
-        this.HIGH_CONTRAST_COLORS = [
+        this.HIGH_CONTRAST_COLORS_DARK = [
             '#3b82f6', // blu
             '#ef4444', // rosso
             '#10b981', // verde
             '#f59e42', // arancione
             '#a21caf', // viola
         ];
+        this.HIGH_CONTRAST_COLORS_LIGHT = [
+            '#1d4ed8', // blu più scuro
+            '#b91c1c', // rosso più scuro
+            '#047857', // verde più scuro
+            '#b45309', // arancione più scuro
+            '#7c3aed', // viola più chiaro
+        ];
         this._assignedOperators = [];
+    }
+
+    getCurrentPalette() {
+        return document.body.classList.contains('dark-mode') ? this.HIGH_CONTRAST_COLORS_DARK : this.HIGH_CONTRAST_COLORS_LIGHT;
     }
 
     // Assegna i colori a tutti gli operatori disponibili del giorno (fisso)
     assignColorsToAllOperators(operators) {
         this.operatorColors = {};
         this._assignedOperators = [];
+        const palette = this.getCurrentPalette();
         operators.forEach((op, idx) => {
-            this.operatorColors[op] = this.HIGH_CONTRAST_COLORS[idx % this.HIGH_CONTRAST_COLORS.length];
+            this.operatorColors[op] = palette[idx % palette.length];
             this._assignedOperators.push(op);
         });
         if (window.filterManager) {
@@ -201,4 +213,17 @@ class ChartManager {
 }
 
 // Istanza globale
-window.chartManager = new ChartManager(); 
+window.chartManager = new ChartManager();
+
+// Aggiorna i colori dei grafici quando cambia il tema
+window.addEventListener('DOMContentLoaded', () => {
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('change', () => {
+            if (window.chartManager && window.dataLoader) {
+                window.chartManager.assignColorsToAllOperators(window.dataLoader.availableOperators);
+                window.dashboard.updateMainChart();
+            }
+        });
+    }
+}); 

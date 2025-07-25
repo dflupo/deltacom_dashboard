@@ -5,17 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Missione Militare</title>
     <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 </head>
 <body>
     <div class="container">
         <!-- Header -->
-        <header class="header dark-header">
+        <header class="header dark-header" style="position: relative;">
             <div class="logo-wrapper">
                 <img src="logo.jpeg" alt="Deltacom Logo" class="logo-img" />
             </div>
             <h1>Dashboard Deltacom</h1>
+            <div id="theme-switcher" style="position: absolute; top: 24px; right: 24px; display: flex; align-items: center; gap: 12px;">
+                <span class="material-icons" id="icon-sun" style="font-size: 28px; color: #ffd600;">light_mode</span>
+                <label class="switch">
+                  <input type="checkbox" id="theme-toggle">
+                  <span class="slider round"></span>
+                </label>
+                <span class="material-icons" id="icon-moon" style="font-size: 28px; color: #bdbdbd;">dark_mode</span>
+            </div>
         </header>
 
         <!-- Day Selector -->
@@ -50,5 +59,41 @@
     <script src="js/chart-manager.js"></script>
     <script src="js/filters.js"></script>
     <script src="js/main.js"></script>
+    <!-- Aggiungo stile base per lo switch -->
+    <style>
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 28px;
+    }
+    .switch input { display: none; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #444;
+      transition: .4s;
+      border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #ffd600;
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+      background: #222;
+    }
+    </style>
 </body>
 </html> 
